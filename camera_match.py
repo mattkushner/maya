@@ -27,7 +27,7 @@ def match_camera(offset):
         # offset old_group keys
         elems = ['Camera01', 'Object01']
         for elem in elems:
-            long_name = groups_dict['old] + '|' + elem
+            long_name = groups_dict['old'] + '|' + elem
             if mc.objExists(long_name):
                 keyed = mc.keyframe(long_name, name=1, query=1)
                 if keyed:
@@ -38,8 +38,16 @@ def match_camera(offset):
                             attr_keys = mc.keyframe(long_name, attribute=attr, query=True, keyframeCount=True)
                             if attr_keys:
                                 key_offset(long_name, attr, offset)
+        # set current time to beginning of old camera
         mc.currentTime(1001+offset)
         for key, value in groups_dict.iteritems():
             camera_transform = value+'Camera01'
-            camera_position = mc.xform('SynthEyesGroup|Camera01', query=True, worldSpace=True, translation=True)                   
-            mc.move(camera_position, [value+'.rotatePivot', value+'.scalePivot'], rotatePivotRelative=True)
+            x_pos, y_pos, z_pos = mc.xform(camera_transform, query=True, worldSpace=True, translation=True)                   
+            mc.move(x_pos, y_pos, z_pos, [value+'.rotatePivot', value+'.scalePivot'], rotatePivotRelative=True)
+        # snap new group to old group values
+        for attr in ['.translateX', '.translateY', '.translateZ', '.rotateX', '.rotateY', '.rotateZ', '.scaleX', '.scaleY', '.scaleZ']:
+            attr_value = mc.getAttr(groups_dict['old']+attr)
+            mc.setAttr(groups_dict['new']+attr, attr_value)
+        # snap new camera group to old camera position
+        x_pos, y_pos, z_pos = mc.xform(groups_dict['old']+'|Camera01', query=True, worldSpace=True, translation=True)
+        mc.move(x_pos, y_pos, z_pos, groups_dict['new'], rotatePivotRelative=True)
