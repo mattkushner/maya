@@ -17,17 +17,29 @@ def key_offset(node, attr, offset):
 
 
 def match_camera(offset):
-    old_group = 'SynthEyesGroup'
-    elems = ['Camera01', 'Object01']
-    for elem in elems:
-        long_name = old_group + '|' + elem
-        if mc.objExists(long_name):
-            keyed = mc.keyframe(long_name, name=1, query=1)
-            if keyed:
-                # get keyable attrs and check for keys
-                keyable_attrs = mc.listAttr(long_name, k=1)
-                if keyable_attrs:
-                    for attr in keyable_attrs:
-                        attr_keys = mc.keyframe(long_name, attribute=attr, query=True, keyframeCount=True)
-                        if attr_keys:
-                            key_offset(long_name, attr, offset)
+    groups_dict = {}
+    # offsets original if need be, moves group pivot to camera, transfers values from old to new, snaps new camera to old
+    old_groups = [f for f in mc.ls(assemblies=1) if 'SynthEyesGroup' == f]
+    new_groups = [f for f in mc.ls(assemblies=1) if 'SynthEyesGroup' in f and f not in old_groups]
+    if old_groups and len(new_groups)==1:
+        groups_dict['old'] = old_groups[0]
+        groups_dict['new'] = new_groups[0]
+        # offset old_group keys
+        elems = ['Camera01', 'Object01']
+        for elem in elems:
+            long_name = groups_dict['old] + '|' + elem
+            if mc.objExists(long_name):
+                keyed = mc.keyframe(long_name, name=1, query=1)
+                if keyed:
+                    # get keyable attrs and check for keys
+                    keyable_attrs = mc.listAttr(long_name, k=1)
+                    if keyable_attrs:
+                        for attr in keyable_attrs:
+                            attr_keys = mc.keyframe(long_name, attribute=attr, query=True, keyframeCount=True)
+                            if attr_keys:
+                                key_offset(long_name, attr, offset)
+        mc.currentTime(1001+offset)
+        for key, value in groups_dict.iteritems():
+            camera_transform = value+'Camera01'
+            camera_position = mc.xform('SynthEyesGroup|Camera01', query=True, worldSpace=True, translation=True)                   
+            mc.move(camera_position, [value+'.rotatePivot', value+'.scalePivot'], rotatePivotRelative=True)
