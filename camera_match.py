@@ -19,8 +19,8 @@ def match_camera(offset):
     groups_dict = {}
     groups_dict['old_cam'] = groups_dict['new_cam'] = 'Camera01'
     # offsets original if need be, moves group pivot to camera, transfers values from old to new, snaps new camera to old
-    old_groups = [f for f in mc.ls(assemblies=1) if 'SynthEyesGroup' == f]
-    new_groups = [f for f in mc.ls(assemblies=1) if 'SynthEyesGroup' in f and f not in old_groups]
+    old_groups = [f for f in mc.ls(assemblies=1) if 'old' in f]
+    new_groups = [f for f in mc.ls(assemblies=1) if 'new' in f]
     if old_groups and len(new_groups)==1:
         groups_dict['old'] = old_groups[0]
         groups_dict['new'] = new_groups[0]
