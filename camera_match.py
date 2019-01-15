@@ -15,8 +15,22 @@ def get_keys(node, attr):
             key_dict['last'] = int(key_dict['first'])+keys-1
     
     return key_dict
-            
+
+def set_timeline_from_selected():
+    """Function to set timeline based on selected keys."""
+    selected = mc.ls(sl=1)
+    key_dict = get_keys(selected[0], 'translateX')
+    if 'first' in key_dict.keys() and 'last' in key_dict.keys():
+        mc.playbackOptions(minTime=key_dict['first'], animationStartTime=key_dict['first'], maxTime=key_dict['last'], animationEndTime=key_dict['last'])
+    else:
+        print (selected[0]+ ' has no keys.')
+
 def match_camera(old_offset=0, new_offset=0):
+    """Function to match syntheyes_new to syntheyes_old for updating tracks.
+    Args:
+        old_offset (int): Number of frames to offset animation of old camera
+        new_offset (int): Number of frames to offset animation of new camera
+    """
     groups_dict = {}
     groups_dict['old_cam'] = groups_dict['new_cam'] = 'Camera01'
     groups_dict['old_offset'] = old_offset
