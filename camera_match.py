@@ -1,20 +1,21 @@
 import maya.cmds as mc
 
-def key_offset(node, attr, offset):
-    """Function to offset keys on a node so they start on first_frame.
+def get_keys(node, attr):
+    """Function to get first and last keys on a node attribute.
     Args:
         node (str): Name of maya node
         attr (str): Name of attribute
-        offset (int): Amount to offset keys
     """
+    key_dict = {}
     keys = mc.keyframe(node, attribute=attr, q=True, kc=True)
     if keys:
         first_keys = mc.keyframe(node+'.'+attr, q=True, index=(0, 0))
         if first_keys:
-            first_key = int(first_keys[0])
-            last_key = int(first_key)+keys-1
-            mc.keyframe(node+'.'+attr, edit=True, relative=True, timeChange=offset, time=(first_key, last_key))
-
+            key_dict['first'] = int(first_keys[0])
+            key_dict['last'] = int(key_dict['first'])+keys-1
+    
+    return key_dict
+            
 def match_camera(old_offset=0, new_offset=0):
     groups_dict = {}
     groups_dict['old_cam'] = groups_dict['new_cam'] = 'Camera01'
@@ -45,7 +46,9 @@ def match_camera(old_offset=0, new_offset=0):
                                 for attr in keyable_attrs:
                                     attr_keys = mc.keyframe(long_name, attribute=attr, query=True, keyframeCount=True)
                                     if attr_keys:
-                                        key_offset(long_name, attr, groups_dict[group+'_offset'])
+                                        key_dict = get_keys(long_name, attr)
+                                        if 'last' in key_dict.keys() and 'first' in key_dict.keys():
+                                            mc.keyframe(node+'.'+attr, edit=True, relative=True, timeChange=groups_dict[group+'_offset'], time=(key_dict['first'], key_dict['last']))
         # set new frame range
         end_frame = 1000 + mc.keyframe(groups_dict['new']+'|'+groups_dict['new_cam'], attribute='translateX', query=True, keyframeCount=True)
         mc.playbackOptions(animationStartTime=1001, minTime=1001, animationEndTime=end_frame, maxTime=end_frame)
