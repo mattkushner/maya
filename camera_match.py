@@ -15,9 +15,11 @@ def key_offset(node, attr, offset):
             last_key = int(first_key)+keys-1
             mc.keyframe(node+'.'+attr, edit=True, relative=True, timeChange=offset, time=(first_key, last_key))
 
-def match_camera(offset):
+def match_camera(old_offset=0, new_offset=0):
     groups_dict = {}
     groups_dict['old_cam'] = groups_dict['new_cam'] = 'Camera01'
+    groups_dict['old_offset'] = old_offset
+    groups_dict['new_offset'] = new_offset
     # offsets original if need be, moves group pivot to camera, transfers values from old to new, snaps new camera to old
     old_groups = [f for f in mc.ls(assemblies=1) if 'old' in f]
     new_groups = [f for f in mc.ls(assemblies=1) if 'new' in f]
@@ -28,20 +30,22 @@ def match_camera(offset):
             cam_transforms = [mc.listRelatives(f, parent=True)[0] for f in mc.listRelatives(groups_dict[each], allDescendents=True, fullPath=True) if mc.nodeType(f)=='camera']
             if cam_transforms:
                 groups_dict[each+'_cam']= cam_transforms[0]
-        # offset old_group keys
-        elems = [groups_dict['old_cam'], 'Object01']
-        for elem in elems:
-            long_name = groups_dict['old'] + '|' + elem
-            if mc.objExists(long_name):
-                keyed = mc.keyframe(long_name, name=1, query=1)
-                if keyed:
-                    # get keyable attrs and check for keys
-                    keyable_attrs = mc.listAttr(long_name, k=1)
-                    if keyable_attrs:
-                        for attr in keyable_attrs:
-                            attr_keys = mc.keyframe(long_name, attribute=attr, query=True, keyframeCount=True)
-                            if attr_keys:
-                                key_offset(long_name, attr, offset)
+        # offset keys
+        for group in ['old', 'new']:
+            elems = [groups_dict[group+'_cam'], 'Object01', 'Object02']
+            if groups_dict[group+'_offset']:
+                for elem in elems:
+                    long_name = groups_dict[group] + '|' + elem
+                    if mc.objExists(long_name):
+                        keyed = mc.keyframe(long_name, name=1, query=1)
+                        if keyed:
+                            # get keyable attrs and check for keys
+                            keyable_attrs = mc.listAttr(long_name, k=1)
+                            if keyable_attrs:
+                                for attr in keyable_attrs:
+                                    attr_keys = mc.keyframe(long_name, attribute=attr, query=True, keyframeCount=True)
+                                    if attr_keys:
+                                        key_offset(long_name, attr, groups_dict[group+'_offset'])
         # set new frame range
         end_frame = 1000 + mc.keyframe(groups_dict['new']+'|'+groups_dict['new_cam'], attribute='translateX', query=True, keyframeCount=True)
         mc.playbackOptions(animationStartTime=1001, minTime=1001, animationEndTime=end_frame, maxTime=end_frame)
