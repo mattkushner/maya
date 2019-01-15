@@ -62,7 +62,7 @@ def match_camera(old_offset=0, new_offset=0):
                                     if attr_keys:
                                         key_dict = get_keys(long_name, attr)
                                         if 'last' in key_dict.keys() and 'first' in key_dict.keys():
-                                            mc.keyframe(node+'.'+attr, edit=True, relative=True, timeChange=groups_dict[group+'_offset'], time=(key_dict['first'], key_dict['last']))
+                                            mc.keyframe(longname+'.'+attr, edit=True, relative=True, timeChange=groups_dict[group+'_offset'], time=(key_dict['first'], key_dict['last']))
         # set new frame range
         end_frame = 1000 + mc.keyframe(groups_dict['new']+'|'+groups_dict['new_cam'], attribute='translateX', query=True, keyframeCount=True)
         mc.playbackOptions(animationStartTime=1001, minTime=1001, animationEndTime=end_frame, maxTime=end_frame)
