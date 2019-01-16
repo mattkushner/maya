@@ -69,7 +69,7 @@ def match_camera(old_offset=0, new_offset=0):
         # set current time to beginning of old camera
         mc.currentTime(1001+groups_dict['old_offset'])
         for key, value in groups_dict.iteritems():
-            if 'cam' not in key:
+            if key in ['old', 'new']:
                 cam_transform = value+'|'+groups_dict[key+'_cam']
                 x_pos, y_pos, z_pos = mc.xform(cam_transform, query=True, worldSpace=True, translation=True)                   
                 mc.move(x_pos, y_pos, z_pos, [value+'.rotatePivot', value+'.scalePivot'], rotatePivotRelative=True)
