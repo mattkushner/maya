@@ -67,7 +67,7 @@ def match_camera(old_offset=0, new_offset=0):
         end_frame = 1000 + mc.keyframe(groups_dict['new']+'|'+groups_dict['new_cam'], attribute='translateX', query=True, keyframeCount=True)
         mc.playbackOptions(animationStartTime=1001, minTime=1001, animationEndTime=end_frame, maxTime=end_frame)
         # set current time to beginning of old camera
-        mc.currentTime(1001+offset)
+        mc.currentTime(1001+groups_dict['old_offset'])
         for key, value in groups_dict.iteritems():
             if 'cam' not in key:
                 cam_transform = value+'|'+groups_dict[key+'_cam']
