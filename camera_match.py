@@ -26,6 +26,7 @@ def set_timeline_from_selected():
         print (selected[0]+ ' has no keys.')
 
 def setup_anim_scene(shot_name):
+    """Arm and Hammer specific anim scene setup, imports, references and constrains necessary files from Tracking/Layout"""
     # import files
     seq_name = shot_name.split('_')[0]
     key_dict = {}
@@ -63,7 +64,7 @@ def setup_anim_scene(shot_name):
         ref_path = os.path.join(cat_dict['path'], ref_files[-1])
         ns = ref_files[-1].split('.')[0]
         # for Child cats, asset name and cat instance are different, so swap in namespace
-        ns.replace(cat_dict['asset'], cat)
+        ns = ns.replace(cat_dict['asset'], cat)
         referenced = mc.file(ref_path, r=1, type="mayaAscii", ignoreVersion=True, mergeNamespacesOnClash=False, namespace=ns, returnNewNodes=True)
         head_ctrls = [f for f in referenced if f.split(':')[-1] == 'head_ctrl']
         if head_ctrls:
