@@ -49,23 +49,21 @@ def setup_anim_scene(shot_name):
     # set up references in dictionary
     for mm in mm_grp:
         if '_head_ctrl_loc' in mm and mc.nodeType(mm) != 'locator':
-            cat = mm.replace('_head_ctrl_loc', '')
+            cat = cat_asset = mm.replace('_head_ctrl_loc', '')
             # since only one ChildCat asset
             if 'Child' in cat:
                 cat_asset = 'ChildCat_1'
-            import_dict['references'][cat_asset] = '/mnt/ol03/Projects/ArmHammer/_shared/_assets/Character/'+cat_asset+'/publish/maya/'
+            import_dict['references'][cat] = {'path': '/mnt/ol03/Projects/ArmHammer/_shared/_assets/Character/'+cat_asset+'/publish/maya/', 'asset': cat_asset}
             key_dict = get_keys(mm, 'translateX')
     mc.playbackOptions(minTime=key_dict['first'], animationStartTime=key_dict['first'], maxTime=key_dict['last'], animationEndTime=key_dict['last'])
     mc.currentTime(key_dict['first'])
     # get reference file and constrain cats to locators
-    for cat, path in import_dict['references'].iteritems():
-        ref_files = sorted([f for f in os.listdir(path) if cat in f])
-        ref_path = os.path.join(path, ref_files[-1])
+    for cat, cat_dict in import_dict['references'].iteritems():
+        ref_files = sorted([f for f in os.listdir(cat_dict['path']) if cat_dict['asset'] in f])
+        ref_path = os.path.join(cat_dict['path'], ref_files[-1])
         ns = ref_files[-1].split('.')[0]
-        # iterate child namespaces even though there is only one asset
-        if 'Child' in ns and mc.namespace(exists=ns):
-            num = int(ns.split('_')[1])
-            ns = ns.replace(str(num), str(num+1))
+        # for Child cats, asset name and cat instance are different, so swap in namespace
+        ns.replace(cat_dict['asset'], cat)
         referenced = mc.file(ref_path, r=1, type="mayaAscii", ignoreVersion=True, mergeNamespacesOnClash=False, namespace=ns, returnNewNodes=True)
         head_ctrls = [f for f in referenced if f.split(':')[-1] == 'head_ctrl']
         if head_ctrls:
