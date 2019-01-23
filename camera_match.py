@@ -25,6 +25,43 @@ def set_timeline_from_selected():
     else:
         print (selected[0]+ ' has no keys.')
 
+def setup_anim_scene(shot_name):
+    # import files
+    seq_name = shot_name.split('_')[0]
+    key_dict = {}
+    import_dict = {'locator_path': '', 'camera_path': '', 'layout_path': '', 'references': {}}
+    
+    scene_dir = '/mnt/ol03/Projects/ArmHammer/'+seq_name+'/'+shot_name+'/_3D/maya/scenes/'
+    import_dict['locator_path'] = os.path.join(scene_dir, shot_name+'_mm_loc.mb')
+    camera_layouts  = os.listdir(os.path.join(scene_dir, 'Camera_Layout'))
+    for camera_layout in camera_layouts:
+        kind = 'camera'
+        if 'Layout' in camera_layout:
+            kind = 'layout'
+        import_dict[kind+'_path'] = os.path.join(scene_dir, 'Camera_Layout', camera_layout)
+    
+    for key, value in import_dict.iteritems():
+        if value and os.path.isfile(value):
+            mc.file(value, i=1, ignoreVersion=True, mergeNamespacesOnClash=False, rpr=key.split('_')[0], options='v=0;', pr=1)
+    mm_grp = mc.listRelatives('MM_GRP', allDescendents=True)
+    for mm in mm_grp:
+        if '_head_ctrl_loc' in mm and mc.nodeType(mm) != 'locator':
+            cat = mm.replace('_head_ctrl_loc', '')
+            import_dict['references'][cat] = '/mnt/ol03/Projects/ArmHammer/_shared/_assets/Character/'+cat+'/publish/maya/'
+            key_dict = get_keys(mm, 'translateX')
+    mc.playbackOptions(minTime=key_dict['first'], animationStartTime=key_dict['first'], maxTime=key_dict['last'], animationEndTime=key_dict['last'])
+    mc.currentTime(key_dict['first'])
+    # reference and constrain cats to locators
+    for cat, path in import_dict['references'].iteritems():
+        ref_files = sorted([f for f in os.listdir(path) if cat in f])
+        ref_path = os.path.join(path, ref_files[-1])
+        ns = ref_files[-1].split('.')[0]
+        referenced = mc.file(ref_path, r=1, type="mayaAscii", ignoreVersion=True, mergeNamespacesOnClash=False, namespace=ns, returnNewNodes=True)
+        head_ctrls = [f for f in referenced if f.split(':')[-1] == 'head_ctrl']
+        if head_ctrls:
+            mc.parentConstraint(cat+'_head_ctrl_loc', head_ctrls[0], maintainOffset=False)
+            mc.scaleConstraint(cat+'_head_ctrl_loc', head_ctrls[0], maintainOffset=False, skip=["y", "z"])
+    
 def match_camera(old_offset=0, new_offset=0):
     """Function to match syntheyes_new to syntheyes_old for updating tracks.
     Args:
