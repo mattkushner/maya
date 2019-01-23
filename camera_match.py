@@ -43,19 +43,29 @@ def setup_anim_scene(shot_name):
     for key, value in import_dict.iteritems():
         if value and os.path.isfile(value):
             mc.file(value, i=1, ignoreVersion=True, mergeNamespacesOnClash=False, rpr=key.split('_')[0], options='v=0;', pr=1)
+
+    # determine which cat assets are needed
     mm_grp = mc.listRelatives('MM_GRP', allDescendents=True)
+    # set up references in dictionary
     for mm in mm_grp:
         if '_head_ctrl_loc' in mm and mc.nodeType(mm) != 'locator':
             cat = mm.replace('_head_ctrl_loc', '')
-            import_dict['references'][cat] = '/mnt/ol03/Projects/ArmHammer/_shared/_assets/Character/'+cat+'/publish/maya/'
+            # since only one ChildCat asset
+            if 'Child' in cat:
+                cat_asset = 'ChildCat_1'
+            import_dict['references'][cat_asset] = '/mnt/ol03/Projects/ArmHammer/_shared/_assets/Character/'+cat_asset+'/publish/maya/'
             key_dict = get_keys(mm, 'translateX')
     mc.playbackOptions(minTime=key_dict['first'], animationStartTime=key_dict['first'], maxTime=key_dict['last'], animationEndTime=key_dict['last'])
     mc.currentTime(key_dict['first'])
-    # reference and constrain cats to locators
+    # get reference file and constrain cats to locators
     for cat, path in import_dict['references'].iteritems():
         ref_files = sorted([f for f in os.listdir(path) if cat in f])
         ref_path = os.path.join(path, ref_files[-1])
         ns = ref_files[-1].split('.')[0]
+        # iterate child namespaces even though there is only one asset
+        if 'Child' in ns and mc.namespace(exists=ns):
+            num = int(ns.split('_')[1])
+            ns = ns.replace(str(num), str(num+1))
         referenced = mc.file(ref_path, r=1, type="mayaAscii", ignoreVersion=True, mergeNamespacesOnClash=False, namespace=ns, returnNewNodes=True)
         head_ctrls = [f for f in referenced if f.split(':')[-1] == 'head_ctrl']
         if head_ctrls:
