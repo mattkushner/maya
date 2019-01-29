@@ -7,12 +7,17 @@ def get_keys(node, attr):
         attr (str): Name of attribute
     """
     key_dict = {}
+    locked = mc.getAttr(node+'.'+attr, lock=True)
+    if locked:
+        mc.setAttr(node+'.'+attr, lock=False)
     keys = mc.keyframe(node, attribute=attr, q=True, kc=True)
     if keys:
         first_keys = mc.keyframe(node+'.'+attr, q=True, index=(0, 0))
         if first_keys:
             key_dict['first'] = int(first_keys[0])
             key_dict['last'] = int(key_dict['first'])+keys-1
+    if locked:
+        mc.setAttr(node+'.'+attr, lock=True)
     
     return key_dict
 
