@@ -48,14 +48,17 @@ def setup_anim_scene(shot_name):
     
     for key, value in import_dict.iteritems():
         if value and os.path.isfile(value):
-            mc.file(value, i=1, ignoreVersion=True, mergeNamespacesOnClash=False, rpr=key.split('_')[0], options='v=0;', pr=1)
+            if 'locator' in key:
+                mc.file(value, r=1, type="mayaBinary", ignoreVersion=True, mergeNamespacesOnClash=False, namespace='mm')
+            else:
+                mc.file(value, i=1, ignoreVersion=True, mergeNamespacesOnClash=False, rpr=key.split('_')[0], options='v=0;', pr=1)
 
     # determine which cat assets are needed
-    mm_grp = mc.listRelatives('MM_GRP', allDescendents=True)
+    mm_grp = mc.listRelatives('mm:MM_GRP', allDescendents=True)
     # set up references in dictionary
     for mm in mm_grp:
         if '_head_ctrl_loc' in mm and mc.nodeType(mm) != 'locator':
-            cat = cat_asset = mm.replace('_head_ctrl_loc', '')
+            cat = cat_asset = mm.replace('_head_ctrl_loc', '').split(':')[1]
             # since only one ChildCat asset
             if 'Child' in cat:
                 cat_asset = 'ChildCat_1'
@@ -73,8 +76,8 @@ def setup_anim_scene(shot_name):
         referenced = mc.file(ref_path, r=1, type="mayaAscii", ignoreVersion=True, mergeNamespacesOnClash=False, namespace=ns, returnNewNodes=True)
         head_ctrls = [f for f in referenced if f.split(':')[-1] == 'head_ctrl']
         if head_ctrls:
-            mc.parentConstraint(cat+'_head_ctrl_loc', head_ctrls[0], maintainOffset=False)
-            mc.scaleConstraint(cat+'_head_ctrl_loc', head_ctrls[0], maintainOffset=False, skip=["y", "z"])
+            mc.parentConstraint('mm:'+cat+'_head_ctrl_loc', head_ctrls[0], maintainOffset=False)
+            mc.scaleConstraint('mm:'+cat+'_head_ctrl_loc', head_ctrls[0], maintainOffset=False, skip=["y", "z"])
     
 def match_camera(old_offset=0, new_offset=0):
     """Function to match syntheyes_new to syntheyes_old for updating tracks.
