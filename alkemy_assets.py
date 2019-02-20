@@ -4,8 +4,8 @@ import os
 def reference_assets_UI():
     """Reference Assets UI."""
     file_pieces = mc.file(query=True, sceneName=True).split('/')
-    if file_pieces:
-        job_name = mc.file(query=True, sceneName=True).split('/')[4]
+    if len(file_pieces)>1:
+        job_name = file_pieces[4]
         asset_dict = list_assets(job_name)
         # window creation
         if mc.window('referenceAssetsWindow', exists=1):
@@ -18,7 +18,7 @@ def reference_assets_UI():
         for asset_type in sorted(asset_dict.keys()):
             mc.menuItem(asset_type_list, label=asset_type)
         asset_name_list = mc.optionMenu('asset_name_list', label='Asset Name', width=300)
-        load_asset_button = mc.button('load_asset_button', label='Reference Asset', width=150, height=25, backgroundColor=[0.1, 0.1, 0.1], command=lambda *args: reference_asset(asset_name, asset_type),
+        load_asset_button = mc.button('load_asset_button', label='Reference Asset', width=150, height=25, backgroundColor=[0.1, 0.1, 0.1], command=lambda *args: reference_asset(asset_dict, asset_type_list, asset_name_list),
                              annotation='Reference latest work file for chosen asset.')
         mc.setParent('..')
         mc.formLayout('assetInfoForm', edit=1, attachForm=[('asset_type_list', 'top', 10), ('asset_type_list', 'left', 60),
@@ -28,7 +28,7 @@ def reference_assets_UI():
         load_assets(asset_dict, asset_type_list, asset_name_list)
         mc.showWindow(reference_assets_window)
     else:
-        print('Please open a file.')
+        mc.error('Please open a file.')
 
 def load_assets(asset_dict, asset_type_list, asset_name_list):
     asset_type = mc.optionMenu(asset_type_list, query=True, value=True)
@@ -47,14 +47,19 @@ def list_assets(job_name):
                   'Vehicle': {'dir': '', 'assets': []}}
     for asset_type in asset_dict.keys():
         asset_dict[asset_type]['dir'] = os.path.join('/mnt', 'ol03', 'Projects', job_name, '_shared', '_assets', asset_type)
-        asset_dict[asset_type]['assets'] = os.listdir(asset_dict[asset_type]['dir'])
+        asset_dict[asset_type]['assets'] = [f for f in os.listdir(asset_dict[asset_type]['dir']) if '.' not in f]
     return asset_dict
 
-def reference_asset(asset_name, asset_type='Prop'):
-    job_name = mc.file(query=True, sceneName=True).split('/')[4]
-    asset_dict = list_assets(job_name)
+def reference_asset(asset_dict, asset_type_list, asset_name_list):
+    asset_type = mc.optionMenu(asset_type_list, query=True, value=True)
+    asset_name = mc.optionMenu(asset_name_list, query=True, value=True)
     if asset_name in asset_dict[asset_type]['assets']:
         asset_dir = os.path.join(asset_dict[asset_type]['dir'], asset_name, 'work', 'maya', 'scenes')
         asset_files = [f for f in os.listdir(asset_dir) if os.path.isfile(os.path.join(asset_dir, f))]
         latest_file = os.path.join(asset_dir, sorted(asset_files)[-1])
-        mc.file(latest_file, r=1, type="mayaBinary", ignoreVersion=True, mergeNamespacesOnClash=False, namespace=asset_name)
+        file_type = "mayaBinary"
+        if latest_file.endswith('.ma'):
+            file_type = 'mayaAscii'
+        mc.file(latest_file, r=1, type=file_type, ignoreVersion=True, mergeNamespacesOnClash=False, namespace=asset_name)
+        if mc.window('referenceAssetsWindow', exists=1):
+            mc.deleteUI('referenceAssetsWindow')
