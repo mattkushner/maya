@@ -15,6 +15,8 @@ def reference_assets_UI():
         mc.frameLayout(label='Choose your Asset Type and Asset Name', collapsable=0, collapse=0)
         mc.formLayout('assetInfoForm', numberOfDivisions=100)
         asset_type_list = mc.optionMenu('asset_type_list', label='Asset Type', width=300, changeCommand=lambda *args: load_assets(asset_dict, asset_type_list, asset_name_list))
+        for asset_type in sorted(asset_dict.keys()):
+            mc.menuItem(asset_type_list, label=asset_type)
         asset_name_list = mc.optionMenu('asset_name_list', label='Asset Name', width=300)
         load_asset_button = mc.button('load_asset_button', label='Reference Asset', width=150, height=25, backgroundColor=[0.1, 0.1, 0.1], command=lambda *args: reference_asset(asset_name, asset_type),
                              annotation='Reference latest work file for chosen asset.')
@@ -23,14 +25,19 @@ def reference_assets_UI():
                                                            ('asset_name_list', 'top', 40), ('asset_name_list', 'left', 60),
                                                            ('load_asset_button', 'top', 70), ('load_asset_button', 'left', 150)])
         mc.window(reference_assets_window, edit=True, width=400, height=150)
+        load_assets(asset_dict, asset_type_list, asset_name_list)
         mc.showWindow(reference_assets_window)
     else:
         print('Please open a file.')
 
 def load_assets(asset_dict, asset_type_list, asset_name_list):
     asset_type = mc.optionMenu(asset_type_list, query=True, value=True)
-    asset_names = asset_dict[asset_type]
-    mc.optionMenu(asset_type_list, edit=True, asset_names) 
+    menu_items = mc.optionMenu(asset_name_list, query=True, itemListLong=True)
+    if menu_items:
+        mc.deleteUI(menu_items)
+    asset_names = asset_dict[asset_type]['assets']
+    for asset_name in sorted(asset_names):
+        mc.menuItem(asset_type_list, label=asset_name)
         
 def list_assets(job_name):
     assets_dir = os.path.join('/mnt', 'ol03', 'Projects', job_name, '_shared', '_assets')
