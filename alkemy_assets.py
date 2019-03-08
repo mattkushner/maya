@@ -63,3 +63,12 @@ def reference_asset(asset_dict, asset_type_list, asset_name_list):
         mc.file(latest_file, r=1, type=file_type, ignoreVersion=True, mergeNamespacesOnClash=False, namespace=asset_name)
         if mc.window('referenceAssetsWindow', exists=1):
             mc.deleteUI('referenceAssetsWindow')
+        
+def intestine_constraints(curve_list):
+    for crv in curve_list:
+        crv_pieces = crv.split('_')
+        points = [crv+'.cv[0]', crv+'.cv[3]']
+        for i in range(len(points)):
+            parent_locator = '_'.join([crv_pieces[i*2], crv_pieces[i*2+1]])
+            clstr = mc.cluster(points[i], name=locator+'cluster')
+            mc.parentConstraint(parent_locator, clstr[1])
