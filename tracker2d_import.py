@@ -575,11 +575,11 @@ class   TrackerImportUI:
         self.name = "trackerImportUI"
         self.title = "2D Tracker Import"
 
-        path_2d = '/mnt/ol03/Projects/'
+        self.path_2d = '/mnt/ol03/Projects/'
 
         file_path = mc.file(query=True, sceneName=True)
         if file_path:
-            path_2d = os.path.join(path_2d, file_path.split('/')[4], file_path.split('/')[5], file_path.split('/')[6], '_3D')
+            self.path_2d = os.path.join(self.path_2d, file_path.split('/')[4], file_path.split('/')[5], file_path.split('/')[6], '_3D')
 
         # begin creating the UI, cleaning up the old
         if (mc.window(self.name, q=True, exists=True)):
@@ -613,7 +613,7 @@ class   TrackerImportUI:
 
         self.camera = mc.textFieldButtonGrp( label='Camera: ', text=defaultCam, buttonLabel='...', bc=self.loadCamera )
 
-        self.filePath = mc.textFieldButtonGrp( label='Tracking File: ', text=path_2d, buttonLabel='...', bc=self.findFilePath )
+        self.filePath = mc.textFieldButtonGrp( label='Tracking File: ', text=self.path_2d, buttonLabel='...', bc=self.findFilePath )
 
         self.offsetX = mc.floatSliderGrp( label='Offset X: ', field=True, minValue=-1.0, maxValue=1.0,
             fieldMinValue=-8192.0, fieldMaxValue=8192.0, value=0.0 )
@@ -759,7 +759,7 @@ class   TrackerImportUI:
 
     def findFilePath(self, *args):
         basicFilter = "*"
-        result = mc.fileDialog2(fileFilter=basicFilter, dialogStyle=2, fileMode=1)
+        result = mc.fileDialog2(fileFilter=basicFilter, dialogStyle=2, fileMode=1, dir=self.path_2d)
         if (result):
             mc.textFieldButtonGrp(self.filePath, e=True, text=result[0])
 
