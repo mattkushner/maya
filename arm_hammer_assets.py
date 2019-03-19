@@ -1,6 +1,6 @@
 import maya.cmds as mc
 import os
-from import get_keys
+import camera_match
 
 
 def setup_anim_scene(shot_name):
@@ -36,7 +36,7 @@ def setup_anim_scene(shot_name):
             if 'Child' in cat:
                 cat_asset = 'ChildCat_1'
             import_dict['references'][cat] = {'path': '/mnt/ol03/Projects/ArmHammer/_shared/_assets/Character/'+cat_asset+'/publish/maya/', 'asset': cat_asset}
-            key_dict = get_keys(mm, 'translateX')
+            key_dict = camera_match.get_keys(mm, 'translateX')
     mc.playbackOptions(minTime=key_dict['first'], animationStartTime=key_dict['first'], maxTime=key_dict['last'], animationEndTime=key_dict['last'])
     mc.currentTime(key_dict['first'])
     # get reference file and constrain cats to locators
