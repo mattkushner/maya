@@ -23,8 +23,8 @@ def reference_assets_UI():
         mc.setParent('..')
         mc.formLayout('assetInfoForm', edit=1, attachForm=[('asset_type_list', 'top', 20), ('asset_type_list', 'left', 50),
                                                             ('asset_name_list', 'top', 50), ('asset_name_list', 'left', 50),
-                                                            ('refresh_asset_button', 'top', 80), ('refresh_asset_button', 'left', 50),
-                                                            ('load_asset_button', 'top', 80), ('load_asset_button', 'left', 200)])
+                                                            ('load_asset_button', 'top', 80), ('load_asset_button', 'left', 50),
+                                                            ('refresh_asset_button', 'top', 80), ('refresh_asset_button', 'left', 200)])
         mc.window(reference_assets_window, edit=True, width=400, height=150)
         mc.showWindow(reference_assets_window)
 
