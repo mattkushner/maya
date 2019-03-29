@@ -86,4 +86,25 @@ def match_camera(old_offset=0, new_offset=0):
         x_pos, y_pos, z_pos = mc.xform(groups_dict['old']+'|'+groups_dict['old_cam'], query=True, worldSpace=True, translation=True)
         mc.move(x_pos, y_pos, z_pos, groups_dict['new'], rotatePivotRelative=True)
 
+import math
+def truncate(f, n):
+    return math.floor(f * 10 ** n) / 10 ** n
+
+def cluster_verts(tracker_group='tracker_group'):
+    # for clustering vertices of a mesh to corresponding trackers
+    selected = mc.ls(sl=1)
+    vertices = mc.filterExpand(selected, sm=31)
+    tracker_dict = {}
+    trackers = mc.listRelatives(tracker_group)
+    for tracker in trackers:
+        tracker_dict[tracker] = [truncate(f, 5) for f in mc.xform(tracker, query=True, translation=True, worldSpace=True)]
+    if vertices:
+        for vert in vertices:
+            vert_pos = [truncate(f, 5) for f in mc.xform(vert, query=True, translation=True, worldSpace=True)]
+            vert_tracker = [k for k,v in tracker_dict.iteritems() if vert_pos==v]
+            if len(vert_tracker)==1:
+                cluster_name = 'cluster_'+vert_tracker[0]
+                mc.cluster(vert, name=cluster_name)
+                mc.parentConstraint(vert_tracker[0], cluster_name+'Handle')
+
         
