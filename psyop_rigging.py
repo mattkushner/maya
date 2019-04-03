@@ -19,12 +19,11 @@ def transfer_weights(shape_dict):
 
 def transfer_selected():
     shape_dict = {'source':{},'dest':{}}
-    objs = ['source', 'dest']
     selected = mc.ls(selection=True, long=True)
     if len(selected) == 2:
-        for i in range(len(objs)):
-            shape_dict[objs[i]]['transform'] = selected[i]
-            shape_dict[objs[i]]['shape'] = mc.listRelatives(selected[i], children=True, path=True)[0]
+        for i in range(len(sorted(shape_dict.keys())):
+            shape_dict[sorted(shape_dict.keys(), reverse=True)[i]]['transform'] = selected[i]
+            shape_dict[sorted(shape_dict.keys(), reverse=True)[i]]['shape'] = mc.listRelatives(selected[i], children=True, path=True)[0]
         transfer_weights(shape_dict)
     else:
         print("Please select exactly two meshes for transfer.")
