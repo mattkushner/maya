@@ -9,6 +9,8 @@ def update_ctrl_set():
     mc.sets(ctrls, n=ctrlSet) 
 
 
+import maya.cmds as mc
+
 def transfer_weights(shape_dict):
     #for new models, pass both and skin to same joints and transfer weights
     joints = mc.skinCluster(shape_dict['source']['shape'], influence=True, query=True)
@@ -16,6 +18,11 @@ def transfer_weights(shape_dict):
     shape_dict['dest']['cluster'] = mc.skinCluster(joints+[shape_dict['dest']['transform']], toSelectedBones=True, bindMethod=0, normalizeWeights=1, weightDistribution=0, maximumInfluences=5, obeyMaxInfluences=True, dropoffRate=4, removeUnusedInfluence=False)[0]
     mc.copySkinWeights(sourceSkin=shape_dict['source']['cluster'], destinationSkin=shape_dict['dest']['cluster'], noMirror=True, surfaceAssociation="closestPoint", influenceAssociation=("label", "oneToOne", "closestJoint"))
     print('Weights transferred from '+shape_dict['source']['transform']+' to '+shape_dict['dest']['transform']+'.')
+
+def transfer_shader(shape_dict):
+    SGs = [f for f  in mc.listConnections(shape_dict['source']['shape']) if mc.nodeType(f) == 'shadingEngine']
+    if SGs:
+        mc.sets(shape_dict['dest']['shape'], edit=True, forceElement=SGs[0])
 
 def transfer_selected():
     shape_dict = {'source':{},'dest':{}}
@@ -26,5 +33,8 @@ def transfer_selected():
             shape_dict[shape_keys[i]]['transform'] = selected[i]
             shape_dict[shape_keys[i]]['shape'] = mc.listRelatives(selected[i], children=True, path=True)[0]
         transfer_weights(shape_dict)
+        transfer_shader(shape_dict)
     else:
         print("Please select exactly two meshes for transfer.")
+
+transfer_selected()
