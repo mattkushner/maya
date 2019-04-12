@@ -8,9 +8,6 @@ def update_ctrl_set():
         mc.delete(ctrlSet)
     mc.sets(ctrls, n=ctrlSet) 
 
-
-import maya.cmds as mc
-
 def transfer_weights(shape_dict):
     #for new models, pass both and skin to same joints and transfer weights
     joints = mc.skinCluster(shape_dict['source']['shape'], influence=True, query=True)
@@ -25,6 +22,7 @@ def transfer_shader(shape_dict):
         mc.sets(shape_dict['dest']['shape'], edit=True, forceElement=SGs[0])
 
 def transfer_selected():
+    # transfers skinning and shader from selected[0] to selected[1]
     shape_dict = {'source':{},'dest':{}}
     selected = mc.ls(selection=True, long=True)
     shape_keys = sorted(shape_dict.keys(), reverse=True)
@@ -37,4 +35,28 @@ def transfer_selected():
     else:
         print("Please select exactly two meshes for transfer.")
 
-transfer_selected()
+def combine_selected(out_mesh='body_collider_Geo'):
+    # takes selected skinned geo, duplicates as a new skinned combined mesh with a gold lambert shader for passive collisions
+    shape_dict = {}
+    selected = mc.ls(selection=True, long=True)
+    for i in range(len(selected)):
+        shape_dict[str(i).zfill(2)] = {'source': {'transform': '', 'shape': ''}, 'dest': {'transform': '', 'shape': ''}}
+        shape_dict[str(i).zfill(2)]['source']['transform'] = selected[i]
+        shape_dict[str(i).zfill(2)]['source']['shape'] = mc.listRelatives(selected[i], children=True, path=True)[0]
+        new_geo = selected[i].split('|')[-1]+'_new'
+        mc.duplicate(selected[i], name=new_geo)
+        mc.parent(new_geo, world=True)
+        shape_dict[str(i).zfill(2)]['dest']['transform'] = new_geo
+        shape_dict[str(i).zfill(2)]['dest']['shape'] = mc.listRelatives(new_geo, children=True, path=True)[0]
+    transfer_weights(shape_dict)
+    dest_transforms = [v['dest']['transform'] for k, v in shape_dict.iteritems()]
+    united = mc.polyUniteSkinned(dest_transforms, constructionHistory=False)
+    mc.rename(united[0], out_mesh)
+    mc.parent(out_mesh, 'collider_Geo_Grp')
+    shader='sim_Gold_Mtl'
+    mc.shadingNode('lambert', asShader=True, name=shader)
+    mc.sets(name=shader+'SG', renderable=True, noSurfaceShader=True, empty=True)
+    mc.connectAttr(shader+'.outColor',shader+'SG.surfaceShader', force=True)
+    mc.sets(out_mesh, edit=True, forceElement=shader+'SG')
+    mc.delete(dest_transforms)
+    mc.setAttr(shader+'.color', 1, .7, 0, type='double3')
