@@ -36,7 +36,7 @@ def transfer_selected():
         print("Please select exactly two meshes for transfer.")
 
 def combine_selected(out_mesh='body_collider_Geo'):
-    # takes selected skinned geo, duplicates as a new skinned combined mesh with a gold lambert shader for passive collisions
+    # duplicates and skins all selected meshes and then combines to make one skinned passive collider mesh for cloth
     shape_dict = {}
     selected = mc.ls(selection=True, long=True)
     for i in range(len(selected)):
@@ -54,9 +54,47 @@ def combine_selected(out_mesh='body_collider_Geo'):
     mc.rename(united[0], out_mesh)
     mc.parent(out_mesh, 'collider_Geo_Grp')
     shader='sim_Gold_Mtl'
-    mc.shadingNode('lambert', asShader=True, name=shader)
-    mc.sets(name=shader+'SG', renderable=True, noSurfaceShader=True, empty=True)
-    mc.connectAttr(shader+'.outColor',shader+'SG.surfaceShader', force=True)
+    if not mc.objExists(shader):
+        mc.shadingNode('lambert', asShader=True, name=shader)
+        mc.sets(name=shader+'SG', renderable=True, noSurfaceShader=True, empty=True)
+        mc.connectAttr(shader+'.outColor',shader+'SG.surfaceShader', force=True)
     mc.sets(out_mesh, edit=True, forceElement=shader+'SG')
     mc.delete(dest_transforms)
     mc.setAttr(shader+'.color', 1, .7, 0, type='double3')
+
+def dynamic_attributes():
+    # add attrs to Dynamic_Ctrl 
+    sim_geo = mc.ls(sl=True)
+    ctrl='Dynamic_Ctrl'
+    reverse = 'dynMeshVisRev'
+    mc.addAttr(ctrl, longName="dynamic", attributeType="bool")
+    mc.setAttr(ctrl+'.dynamic', edit=True, channelBox=True)
+    mc.connectAttr('Dynamic_Ctrl.dynamic', 'cloth_Nucleus.enable', force=True)
+    for geo in sim_geo:
+        geo_pfx = geo.split('_')[0]
+        mc.addAttr(ctrl, longName=geo_pfx+"Cloth",attributeType="double", min=0, max=1,defaultValue=1)
+        mc.setAttr(ctrl+'.'+geo_pfx+'Cloth', edit=True, keyable=True)
+        mc.blendShape([geo, geo.replace('_sim', '')], n=geo_pfx+'_BS')
+        mc.reorderDeformers(geo_pfx+"_SkinClst", geo_pfx+"_BS", geo_pfx+"_Geo")
+        mc.connectAttr(ctrl+'.'+geo_pfx+'Cloth', geo_pfx+'_BS.'+geo_pfx+'_sim_Geo')
+    mc.addAttr(ctrl, longName="meshDisplay", attributeType="enum", en="mesh:sim:")
+    mc.setAttr(ctrl+'.meshDisplay', edit=True, channelBox=True)
+    mc.connectAttr('Dynamic_Ctrl.meshDisplay', 'CLOTH.visibility', force=True)
+    mc.shadingNode('reverse', asUtility=True, name=reverse)
+    mc.connectAttr('Dynamic_Ctrl.meshDisplay', reverse+'.inputX', force=True)
+    mc.connectAttr(reverse+'.outputX', 'GEO.visibility', force=True)
+
+def mouth_corners():
+    corners_dict = {'posTX': 'wide',
+                    'posTY': 'smile',
+                    'posTZ': 'forward',
+                    'revTX': 'narrow',
+                    'revTY': 'frown',
+                    'revTZ': 'back'}
+
+    for attr, BS in corners_dict.iteritems():
+        for side in ['Lf', 'Rt']:
+            ctrl_attr = '_'.join([side, 'mouthCorner', 'Ctrl.'+attr])
+            bs_target = '_'.join(['mouthCorners', 'BS.', side, BS, 'BS'])
+            print('Connected '+ctrl_attr+ ' to '+bs_target)
+            mc.connectAttr(ctrl_attr, bs_target, force=True)
