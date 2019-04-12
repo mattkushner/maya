@@ -70,8 +70,8 @@ def dynamic_attributes():
     mc.connectAttr('Dynamic_Ctrl.dynamic', 'cloth_Nucleus.enable', force=True)
     bs_geo = mc.ls(sl=True, long=True)
     for geo in bs_geo:
-        geo_pfx = geo.split('_')[0]
-        source_geos = [g for g in mc.ls(geo_pfx+'*', long=True) if 'GEO' in g]
+        geo_pfx = geo.split('|')[-1].split('_')[0]
+        source_geos = [g for g in mc.ls('*'+geo_pfx+'*', long=True) if 'GEO' in g and mc.nodeType(g) != 'mesh']
         if source_geos and len(source_geos)==1:
             source_geo = source_geos[0]
             bs_type = 'wrap'
@@ -80,7 +80,7 @@ def dynamic_attributes():
             mc.addAttr(ctrl, longName=geo_pfx+"Cloth",attributeType="double", min=0, max=1,defaultValue=1)
             mc.setAttr(ctrl+'.'+geo_pfx+'Cloth', edit=True, keyable=True)
             mc.blendShape([geo, source_geo], n=geo_pfx+'_BS')
-            mc.reorderDeformers(geo_pfx+"_SkinClst", geo_pfx+"_BS", geo_pfx+"_Geo")
+            mc.reorderDeformers(geo_pfx+"_SkinClst", geo_pfx+"_BS", source_geo)
             mc.connectAttr(ctrl+'.'+geo_pfx+'Cloth', geo_pfx+'_BS.'+geo_pfx+'_'+bs_type+'_Geo')
     mc.addAttr(ctrl, longName="meshDisplay", attributeType="enum", en="mesh:sim:")
     mc.setAttr(ctrl+'.meshDisplay', edit=True, channelBox=True)
