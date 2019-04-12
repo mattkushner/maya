@@ -63,20 +63,25 @@ def combine_selected(out_mesh='body_collider_Geo'):
     mc.setAttr(shader+'.color', 1, .7, 0, type='double3')
 
 def dynamic_attributes():
-    # add attrs to Dynamic_Ctrl 
-    sim_geo = mc.ls(sl=True)
     ctrl='Dynamic_Ctrl'
     reverse = 'dynMeshVisRev'
     mc.addAttr(ctrl, longName="dynamic", attributeType="bool")
     mc.setAttr(ctrl+'.dynamic', edit=True, channelBox=True)
     mc.connectAttr('Dynamic_Ctrl.dynamic', 'cloth_Nucleus.enable', force=True)
-    for geo in sim_geo:
+    bs_geo = mc.ls(sl=True, long=True)
+    for geo in bs_geo:
         geo_pfx = geo.split('_')[0]
-        mc.addAttr(ctrl, longName=geo_pfx+"Cloth",attributeType="double", min=0, max=1,defaultValue=1)
-        mc.setAttr(ctrl+'.'+geo_pfx+'Cloth', edit=True, keyable=True)
-        mc.blendShape([geo, geo.replace('_sim', '')], n=geo_pfx+'_BS')
-        mc.reorderDeformers(geo_pfx+"_SkinClst", geo_pfx+"_BS", geo_pfx+"_Geo")
-        mc.connectAttr(ctrl+'.'+geo_pfx+'Cloth', geo_pfx+'_BS.'+geo_pfx+'_sim_Geo')
+        source_geos = [g for g in mc.ls(geo_pfx+'*', long=True) if 'GEO' in g]
+        if source_geos and len(source_geos)==1:
+            source_geo = source_geos[0]
+            bs_type = 'wrap'
+            if '_sim_' in geo:
+                bs_type = 'sim'
+            mc.addAttr(ctrl, longName=geo_pfx+"Cloth",attributeType="double", min=0, max=1,defaultValue=1)
+            mc.setAttr(ctrl+'.'+geo_pfx+'Cloth', edit=True, keyable=True)
+            mc.blendShape([geo, source_geo], n=geo_pfx+'_BS')
+            mc.reorderDeformers(geo_pfx+"_SkinClst", geo_pfx+"_BS", geo_pfx+"_Geo")
+            mc.connectAttr(ctrl+'.'+geo_pfx+'Cloth', geo_pfx+'_BS.'+geo_pfx+'_'+bs_type+'_Geo')
     mc.addAttr(ctrl, longName="meshDisplay", attributeType="enum", en="mesh:sim:")
     mc.setAttr(ctrl+'.meshDisplay', edit=True, channelBox=True)
     mc.connectAttr('Dynamic_Ctrl.meshDisplay', 'CLOTH.visibility', force=True)
