@@ -103,3 +103,32 @@ def mouth_corners():
             bs_target = '_'.join(['mouthCorners', 'BS.', side, BS, 'BS'])
             print('Connected '+ctrl_attr+ ' to '+bs_target)
             mc.connectAttr(ctrl_attr, bs_target, force=True)
+
+def connect_cache():
+    geo_dict = {}
+    alembics = mc.ls(type='ExocortexAlembicFile')
+    for alembic in alembics:
+        geo_dict[alembic] = {}
+        deform_connections = [f for f in mc.listConnections(alembic) if 'PolyMeshDeform' in mc.nodeType(f)]
+        for deform_connection in deform_connections:
+            geos = list(set([g for g in mc.listConnections(deform_connection) if g.endswith('Geo')]))
+            if len(geos) == 1:
+                geo_name = geos[0].replace('|', '')
+                geo_dict[alembic][geo_name] = {'cloth': '', 'mesh': ''}
+                geo_matches = mc.ls('*'+geo_name, long=True)
+                for geo_match in geo_matches:
+                    if 'GEO' in geo_match:
+                        geo_dict[alembic][geo_name]['mesh'] = geo_match
+                    else:
+                        geo_dict[alembic][geo_name]['cloth'] = geo_match
+            else:
+                print('Not a single mesh:' + str(geos))
+    for abc, abc_dict in geo_dict.iteritems():
+        for geo_name, node_dict in abc_dict.iteritems():
+            bs = geo_name+'_BS'
+            mc.blendShape([node_dict['cloth'], node_dict['mesh']], name=bs)
+            print("Creating {BS} with source {SRC} and destination {DST} ".format(BS=bs, SRC=node_dict['cloth'], DST=node_dict['mesh']))
+        abc_name = abc.replace(':','_')
+        all_geos = abc_dict.keys()
+        mc.group(all_geos, world=True, name=abc_name)
+        mc.hide(abc_name)
