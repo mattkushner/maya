@@ -124,11 +124,12 @@ def connect_cache():
             else:
                 print('Not a single mesh:' + str(geos))
     for abc, abc_dict in geo_dict.iteritems():
+        all_geos = []
         for geo_name, node_dict in abc_dict.iteritems():
             bs = geo_name+'_BS'
             mc.blendShape([node_dict['cloth'], node_dict['mesh']], name=bs)
-            print("Creating {BS} with source {SRC} and destination {DST} ".format(BS=bs, SRC=node_dict['cloth'], DST=node_dict['mesh']))
+            all_geos.append(node_dict['cloth'])
+            print("Creating {BS} with source {SRC} and destination {DST}".format(BS=bs, SRC=node_dict['cloth'], DST=node_dict['mesh']))
         abc_name = abc.replace(':','_')
-        all_geos = abc_dict.keys()
         mc.group(all_geos, world=True, name=abc_name)
         mc.hide(abc_name)
