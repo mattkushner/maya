@@ -104,7 +104,7 @@ def mouth_corners():
             print('Connected '+ctrl_attr+ ' to '+bs_target)
             mc.connectAttr(ctrl_attr, bs_target, force=True)
 
-def connect_cache():
+def connect_cache(task='fxCloth'):
     # connect alembic cache cloth meshes to rig meshes via blendshapes
     geo_dict = {}
     cloth_geos = []
@@ -112,7 +112,7 @@ def connect_cache():
     clothSetup = [f for f in mc.ls(type='blendShape') if mc.attributeQuery('clothSetup', exists=True, node=f)]
     mc.delete(clothSetup)
     # generate dictionary of source and destination meshes
-    alembics = mc.ls(type='ExocortexAlembicFile')
+    alembics = [f for f in mc.ls(type='ExocortexAlembicFile') if task in mc.getAttr(f+'.fileName')]
     for alembic in alembics:
         geo_dict[alembic] = {}
         deform_connections = [f for f in mc.listConnections(alembic) if 'PolyMeshDeform' in mc.nodeType(f)]
