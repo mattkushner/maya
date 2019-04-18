@@ -146,3 +146,24 @@ def connect_cache(task='fxCloth'):
             mc.setAttr(bs+'.clothSetup', edit=True, channelBox=True)
             mc.connectAttr(abc_group+'.blendShapes', bs+'.'+geo_name.split(':')[-1], force=True)
             print("Creating {BS} with source {SRC} and destination {DST}".format(BS=bs, SRC=node_dict['cloth'], DST=node_dict['mesh']))
+
+def fix_RNs():
+    mc.namespace(setNamespace=':')
+    root_namespaces = mc.namespaceInfo(listOnlyNamespaces=True, recurse=False)
+    for ns in namespaces:
+        try:
+            ns_nodes = [f for f in mc.namespaceInfo(ns, listNamespace=True) if mc.objectType(f) == 'transform']
+            if ns_nodes:
+                rn = mc.referenceQuery(ns_nodes[0], referenceNode=True)
+                if ns+'RN' == rn:
+                    print(ns+' = '+rn)
+                else:
+                    new_rn = ns+'RN'
+                    mc.lockNode(rn, lock=False)
+                    mc.rename(rn, new_rn)
+                    mc.lockNode(new_rn, lock=True)
+                    print('Renamed {RN} as {new_RN}'.format(RN=rn, new_RN=new_rn)) 
+        except:
+            pass
+
+            
