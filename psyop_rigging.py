@@ -150,7 +150,7 @@ def connect_cache(task='fxCloth'):
 def fix_RNs():
     mc.namespace(setNamespace=':')
     root_namespaces = mc.namespaceInfo(listOnlyNamespaces=True, recurse=False)
-    for ns in namespaces:
+    for ns in root_namespaces:
         try:
             ns_nodes = [f for f in mc.namespaceInfo(ns, listNamespace=True) if mc.objectType(f) == 'transform']
             if ns_nodes:
