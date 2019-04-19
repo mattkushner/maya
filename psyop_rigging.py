@@ -166,4 +166,12 @@ def fix_RNs():
         except:
             pass
 
-            
+def all_CHAR_ctrls(parent_grp='CHAR', root='cRoot'):
+    # select all character ctrls from sets, where the rig root is root and the parent of the rigs is parent_grp
+    rig_namespaces = [f for f in mc.namespaceInfo(listOnlyNamespaces=True, recurse=False) if mc.namespaceInfo(f, listNamespace=True) and f+':'+root in  mc.namespaceInfo(f, listNamespace=True)]
+    char_namespaces = [f for f in rig_namespaces if mc.listRelatives(f+':'+root, parent=True) and mc.listRelatives(f+':'+root, parent=True)[0] == parent_grp]
+    all_set_members = []
+    for char_ns in char_namespaces:
+        set_members = mc.sets(char_ns+':ctrlSet', query=True)
+        all_set_members += set_members
+    mc.select(all_set_members, replace=True)
