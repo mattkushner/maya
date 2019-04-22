@@ -154,15 +154,19 @@ def fix_RNs():
         try:
             ns_nodes = [f for f in mc.namespaceInfo(ns, listNamespace=True) if mc.objectType(f) == 'transform']
             if ns_nodes:
+                new_rn = ns+'RN'
                 rn = mc.referenceQuery(ns_nodes[0], referenceNode=True)
-                if ns+'RN' == rn:
-                    print(ns+' = '+rn)
+                # if somehow there is already a reference node of the needed name, fix it's name first
+                if mc.objExists(new_rn):
+                    mc.lockNode(new_rn, lock=False)
+                    fix_rn = mc.referenceQuery('crt0045_fxCloth_v006RN', namespace=True)
+                    mc.rename(new_rn, fix_rn+'NS')
+                    mc.lockNode(fix_rn, lock=True)
                 else:
-                    new_rn = ns+'RN'
-                    mc.lockNode(rn, lock=False)
-                    mc.rename(rn, new_rn)
-                    mc.lockNode(new_rn, lock=True)
-                    print('Renamed {RN} as {new_RN}'.format(RN=rn, new_RN=new_rn)) 
+                    if not ns+'RN' == rn:
+                        mc.lockNode(rn, lock=False)
+                        mc.rename(rn, new_rn)
+                        mc.lockNode(new_rn, lock=True)
         except:
             pass
 
