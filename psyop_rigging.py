@@ -179,3 +179,20 @@ def all_CHAR_ctrls(parent_grp='CHAR', root='cRoot'):
         set_members = mc.sets(char_ns+':ctrlSet', query=True)
         all_set_members += set_members
     mc.select(all_set_members, replace=True)
+
+def generate_modeling_data(top_node='GEO', yaml_path=r'C:\Users\mkushner\cortevaWorker.yaml'):
+    geometry = [str(mc.listRelatives(f, parent=True, fullPath=True)[0]) for f in mc.listRelatives(top_node, allDescendents=True, fullPath=True) if mc.objectType(f) == 'mesh']
+    data_dict = {}
+    base_dict = {'vertex': 3, 'uv': 2}
+    for geo in geometry:
+        data_dict[geo] = {}
+        for key, value in base_dict.iteritems():
+            arg_dict = {key: True}
+            num = mc.polyEvaluate(geo, **arg_dict)
+            if key == 'vertex':
+                data =  mc.xform('{GEO}.vtx[*]'.format(GEO=geo), query=True, worldSpace=True, translation=True)
+            elif key == 'uv':
+                data = mc.polyEditUV('{GEO}.map[*]'.format(GEO=geo), query=True, u=True, v=True)
+            data_dict[geo][key] = {k: v for k, v in zip(range(num), [list(t) for t in zip(*[iter(data)]*value)])}
+    createYaml(data_dict, yaml_path)
+    
