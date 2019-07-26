@@ -1,4 +1,5 @@
 import maya.cmds as mc
+import maya.mel as mel
 
 def update_ctrl_set():
     #takes all ctrls in scene and regenerates ctrl set from them
@@ -8,13 +9,44 @@ def update_ctrl_set():
         mc.delete(ctrlSet)
     mc.sets(ctrls, n=ctrlSet) 
 
+def add_ctrl_vis():
+    # psyop: connect control vis
+    master= 'head_Ctrl'
+    ctrls = ['brow', 'nose', 'cheek', 'teeth', 'mouth', 'tongue']
+    for ctrl in ctrls:
+        attr = ctrl+'CtrlVis'
+        grp = ctrl+'_CTRL_Grp'
+        if ctrl == 'mouth':
+            grp = ctrl+'Move_Prnt_Grp'
+        mc.addAttr(master, ln=attr, at='bool')
+        mc.setAttr(master+'.'+attr, edit=True, channelBox=True)
+        mc.connectAttr(master+'.'+attr, grp+'.visibility')
+
+def unlock_normals_soften():
+    # psyop: unlock normals, soften, delete non-deformer history
+    selected = mc.ls(sl=1)
+    for each in selected:
+        mc.polyNormalPerVertex(each, ufn=True)
+        mc.polySoftEdge(each, angle=180, constructionHistory=True)
+    mel.eval('doBakeNonDefHistory( 1, {"prePost" });')
+
+def jaw_corrective_loc():
+    # psyop: facial jaw setup
+    constraint = mc.parentConstraint('jaw_Jnt', 'jaw_Jnt_Loc_Grp')
+    mc.delete(constraint)
+    mc.parentConstraint('neck_end_Jnt', 'jaw_Jnt_Loc_Grp', mo=True)
+    mc.orientConstraint('jaw_Jnt', 'jaw_Jnt_Loc')
+
+    mc.parentConstraint('jaw_Jnt', 'teethBot_Ctrl_Grp', mo=True)
+    mc.parentConstraint('jaw_Jnt', 'tongue_CTRL_Grp', mo=True)     
+    
 def transfer_weights(shape_dict):
-    #for new models, pass both and skin to same joints and transfer weights
-    joints = mc.skinCluster(shape_dict['source']['shape'], influence=True, query=True)
-    shape_dict['source']['cluster'] =mel.eval("findRelatedSkinCluster "+shape_dict['source']['shape']+";")
-    shape_dict['dest']['cluster'] = mc.skinCluster(joints+[shape_dict['dest']['transform']], toSelectedBones=True, bindMethod=0, normalizeWeights=1, weightDistribution=0, maximumInfluences=5, obeyMaxInfluences=True, dropoffRate=4, removeUnusedInfluence=False)[0]
-    mc.copySkinWeights(sourceSkin=shape_dict['source']['cluster'], destinationSkin=shape_dict['dest']['cluster'], noMirror=True, surfaceAssociation="closestPoint", influenceAssociation=("label", "oneToOne", "closestJoint"))
-    print('Weights transferred from '+shape_dict['source']['transform']+' to '+shape_dict['dest']['transform']+'.')
+    #for new models, pass new, old and skin to same joints and transfer weights
+    for key, value_dict in shape_dict.iteritems():
+        joints = mc.skinCluster(value_dict['source']['shape'], influence=True, query=True)
+        value_dict['source']['cluster'] =mel.eval("findRelatedSkinCluster "+value_dict['source']['shape']+";")
+        value_dict['dest']['cluster'] = mc.skinCluster(joints+[value_dict['dest']['transform']], toSelectedBones=True, bindMethod=0, normalizeWeights=1, weightDistribution=0, maximumInfluences=5, obeyMaxInfluences=True, dropoffRate=4, removeUnusedInfluence=False)[0]
+        mc.copySkinWeights(sourceSkin=value_dict['source']['cluster'], destinationSkin=value_dict['dest']['cluster'], noMirror=True, surfaceAssociation="closestPoint", influenceAssociation=("label", "oneToOne", "closestJoint"))
 
 def transfer_shader(shape_dict):
     SGs = [f for f  in mc.listConnections(shape_dict['source']['shape']) if mc.nodeType(f) == 'shadingEngine']
@@ -63,6 +95,11 @@ def combine_selected(out_mesh='body_collider_Geo'):
     mc.setAttr(shader+'.color', 1, .7, 0, type='double3')
 
 def dynamic_attributes():
+    # psyop:
+    # sets up dynamic attributes
+    # dynamic to connect to nucleus
+    # blendshape toggles for each geo
+    # meshDisplay toggle between GEO & CLOTH groups
     ctrl='Dynamic_Ctrl'
     reverse = 'dynMeshVisRev'
     mc.addAttr(ctrl, longName="dynamic", attributeType="bool")
@@ -89,7 +126,8 @@ def dynamic_attributes():
     mc.connectAttr('Dynamic_Ctrl.meshDisplay', reverse+'.inputX', force=True)
     mc.connectAttr(reverse+'.outputX', 'GEO.visibility', force=True)
 
-def mouth_corners():
+    def mouth_corners():
+    # psyop: connect the ctrl attrs to the blendshape target attrs for mouth corners
     corners_dict = {'posTX': 'wide',
                     'posTY': 'smile',
                     'posTZ': 'forward',
