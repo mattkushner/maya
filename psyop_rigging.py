@@ -39,21 +39,21 @@ def jaw_corrective_loc():
 
     mc.parentConstraint('jaw_Jnt', 'teethBot_Ctrl_Grp', mo=True)
     mc.parentConstraint('jaw_Jnt', 'tongue_CTRL_Grp', mo=True)     
-    
+   
 def transfer_weights(shape_dict):
     #for new models, pass new, old and skin to same joints and transfer weights
-    for key, value_dict in shape_dict.iteritems():
-        joints = mc.skinCluster(value_dict['source']['shape'], influence=True, query=True)
-        value_dict['source']['cluster'] =mel.eval("findRelatedSkinCluster "+value_dict['source']['shape']+";")
-        value_dict['dest']['cluster'] = mc.skinCluster(joints+[value_dict['dest']['transform']], toSelectedBones=True, bindMethod=0, normalizeWeights=1, weightDistribution=0, maximumInfluences=5, obeyMaxInfluences=True, dropoffRate=4, removeUnusedInfluence=False)[0]
-        mc.copySkinWeights(sourceSkin=value_dict['source']['cluster'], destinationSkin=value_dict['dest']['cluster'], noMirror=True, surfaceAssociation="closestPoint", influenceAssociation=("label", "oneToOne", "closestJoint"))
+    joints = mc.skinCluster(shape_dict['source']['shape'], influence=True, query=True)
+    shape_dict['source']['cluster'] =mel.eval("findRelatedSkinCluster "+shape_dict['source']['shape']+";")
+    shape_dict['dest']['cluster'] = mc.skinCluster(joints+[shape_dict['dest']['transform']], toSelectedBones=True, bindMethod=0, normalizeWeights=1, weightDistribution=0, maximumInfluences=5, obeyMaxInfluences=True, dropoffRate=4, removeUnusedInfluence=False)[0]
+    mc.copySkinWeights(sourceSkin=shape_dict['source']['cluster'], destinationSkin=shape_dict['dest']['cluster'], noMirror=True, surfaceAssociation="closestPoint", influenceAssociation=("label", "oneToOne", "closestJoint"))
 
+        
 def transfer_shader(shape_dict):
     SGs = [f for f  in mc.listConnections(shape_dict['source']['shape']) if mc.nodeType(f) == 'shadingEngine']
     if SGs:
         mc.sets(shape_dict['dest']['shape'], edit=True, forceElement=SGs[0])
-
-def transfer_selected():
+        
+def transfer_selected(shader=False):
     # transfers skinning and shader from selected[0] to selected[1]
     shape_dict = {'source':{},'dest':{}}
     selected = mc.ls(selection=True, long=True)
@@ -63,36 +63,42 @@ def transfer_selected():
             shape_dict[shape_keys[i]]['transform'] = selected[i]
             shape_dict[shape_keys[i]]['shape'] = mc.listRelatives(selected[i], children=True, path=True)[0]
         transfer_weights(shape_dict)
-        transfer_shader(shape_dict)
+        if shader:
+            transfer_shader(shape_dict)
     else:
         print("Please select exactly two meshes for transfer.")
 
-def combine_selected(out_mesh='body_collider_Geo'):
+def combine_selected(out_mesh='body_collider_Geo', shader=False):
     # duplicates and skins all selected meshes and then combines to make one skinned passive collider mesh for cloth
     shape_dict = {}
     selected = mc.ls(selection=True, long=True)
+    dest_transforms = []
     for i in range(len(selected)):
-        shape_dict[str(i).zfill(2)] = {'source': {'transform': '', 'shape': ''}, 'dest': {'transform': '', 'shape': ''}}
-        shape_dict[str(i).zfill(2)]['source']['transform'] = selected[i]
-        shape_dict[str(i).zfill(2)]['source']['shape'] = mc.listRelatives(selected[i], children=True, path=True)[0]
+        shape_dict = {'source': {'transform': '', 'shape': ''}, 'dest': {'transform': '', 'shape': ''}}
+        shape_dict['source']['transform'] = selected[i]
+        shape_dict['source']['shape'] = mc.listRelatives(selected[i], children=True, path=True)[0]
         new_geo = selected[i].split('|')[-1]+'_new'
         mc.duplicate(selected[i], name=new_geo)
+        # unlock transforms before parenting to avoid world space issues
+        for attr in ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'v']:
+            mc.setAttr('{GEO}.{ATTR}'.format(GEO=new_geo, ATTR=attr), lock=False)
         mc.parent(new_geo, world=True)
-        shape_dict[str(i).zfill(2)]['dest']['transform'] = new_geo
-        shape_dict[str(i).zfill(2)]['dest']['shape'] = mc.listRelatives(new_geo, children=True, path=True)[0]
-    transfer_weights(shape_dict)
-    dest_transforms = [v['dest']['transform'] for k, v in shape_dict.iteritems()]
+        shape_dict['dest']['transform'] = new_geo
+        shape_dict['dest']['shape'] = mc.listRelatives(new_geo, children=True, path=True)[0]
+        transfer_weights(shape_dict)
+        dest_transforms.append(new_geo)
     united = mc.polyUniteSkinned(dest_transforms, constructionHistory=False)
     mc.rename(united[0], out_mesh)
-    mc.parent(out_mesh, 'collider_Geo_Grp')
-    shader='sim_Gold_Mtl'
-    if not mc.objExists(shader):
-        mc.shadingNode('lambert', asShader=True, name=shader)
-        mc.sets(name=shader+'SG', renderable=True, noSurfaceShader=True, empty=True)
-        mc.connectAttr(shader+'.outColor',shader+'SG.surfaceShader', force=True)
-    mc.sets(out_mesh, edit=True, forceElement=shader+'SG')
     mc.delete(dest_transforms)
-    mc.setAttr(shader+'.color', 1, .7, 0, type='double3')
+    mc.parent(out_mesh, 'collider_Geo_Grp')
+    if shader:
+    shader_name='sim_Gold_Mtl'
+        if not mc.objExists(shader_name):
+            mc.shadingNode('lambert', asShader=True, name=shader_name)
+            mc.sets(name=shader_name+'SG', renderable=True, noSurfaceShader=True, empty=True)
+            mc.connectAttr(shader_name+'.outColor',shader_name+'SG.surfaceShader', force=True)
+            mc.setAttr(shader_name+'.color', 1, .7, 0, type='double3')
+        mc.sets(out_mesh, edit=True, forceElement=shader_name+'SG')
 
 def dynamic_attributes():
     # psyop:
