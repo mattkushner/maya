@@ -196,4 +196,28 @@ def generate_modeling_data(top_node='GEO', yaml_path=r'C:\Users\mkushner\corteva
                 data = mc.polyEditUV('{GEO}.map[*]'.format(GEO=geo), query=True, u=True, v=True)
             data_dict[geo][key] = {k: v for k, v in zip(range(num), [list(t) for t in zip(*[iter(data)]*value)])}
     createYaml(data_dict, yaml_path)
-    
+
+def follicle_constraint():
+    #parse selection for ctrl, then geo
+    selected = mc.ls(sl=True)
+    if len(selected) == 2:
+        ctrl, geo = selected
+        closest = mc.createNode('closestPointOnMesh')
+        mc.connectAttr(geo+'.outMesh', closest+'.inMesh')
+        trans = mc.xform(ctrl, translation=True, query=True)
+        mc.setAttr(closest+'.inPositionX', trans[0])
+        mc.setAttr(closest+'.inPositionY', trans[1])
+        mc.setAttr(closest+'.inPositionZ', trans[2])
+        follicle_shape = mc.createNode('follicle')
+        follicle_transform = mc.listRelatives(follicle, type=transform', parent=True)[0]
+        mc.connectAttr(follicle_shape+'.outRotate', follicle_transform+'.rotate')
+        mc.connectAttr(follicle_shape+'.outTranslate', follicle_transform+'.translate')
+        mc.connectAttr(geo+'.worldMatrix', follicle_shape+'.inputWorldmatrix')
+        mc.connectAttr(geo+'.outMesh', follicle_shape+'.inputMesh')
+        mc.setAttr(follicle_shape+'.simulationMethod', 0)
+        u = mc.getAttr(closest+'.result.parameterU')
+        v = mc.getAttr(closest+'.result.parameterV')
+        mc.setAttr(follicle_shape+'.parameterU', u)
+        mc.setAttr(follicle_shape+'.parameterV', v)
+        mc.parentConstraint(follicle_transform, geo, mo=True)
+        mc.delete(closest)
