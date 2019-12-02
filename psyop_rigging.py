@@ -198,26 +198,39 @@ def generate_modeling_data(top_node='GEO', yaml_path=r'C:\Users\mkushner\corteva
     createYaml(data_dict, yaml_path)
 
 def follicle_constraint():
-    #parse selection for ctrl, then geo
+    #parse selection for ctrl (assumes ctrl has a parent grp for constraint), then geo
     selected = mc.ls(sl=True)
     if len(selected) == 2:
         ctrl, geo = selected
+        ctrl_grp = mc.listRelatives(ctrl, parent=True)[0]
+        # create closestPointOnMesh to calculate where the follicle should go in u & v
         closest = mc.createNode('closestPointOnMesh')
         mc.connectAttr(geo+'.outMesh', closest+'.inMesh')
         trans = mc.xform(ctrl, translation=True, query=True)
         mc.setAttr(closest+'.inPositionX', trans[0])
         mc.setAttr(closest+'.inPositionY', trans[1])
         mc.setAttr(closest+'.inPositionZ', trans[2])
-        follicle_shape = mc.createNode('follicle')
-        follicle_transform = mc.listRelatives(follicle, type=transform', parent=True)[0]
+        # create follicle and rename based on ctrl
+        follicle_transform = ctrl+'_follicle'
+        follicle_shape = follicle_transform+'Shape'
+        follicle = mc.createNode('follicle')
+        mc.rename(follicle, follicle_shape)
+        follicle = mc.listRelatives(follicle_shape, type='transform', parent=True)[0]
+        mc.rename(follicle, follicle_transform)
+        # connect follicle_shape & transform
         mc.connectAttr(follicle_shape+'.outRotate', follicle_transform+'.rotate')
         mc.connectAttr(follicle_shape+'.outTranslate', follicle_transform+'.translate')
-        mc.connectAttr(geo+'.worldMatrix', follicle_shape+'.inputWorldmatrix')
+        # connect geo to follicle
+        mc.connectAttr(geo+'.worldMatrix', follicle_shape+'.inputWorldMatrix')
         mc.connectAttr(geo+'.outMesh', follicle_shape+'.inputMesh')
         mc.setAttr(follicle_shape+'.simulationMethod', 0)
+        # determine u & v, parent constrain grp to follicle
         u = mc.getAttr(closest+'.result.parameterU')
         v = mc.getAttr(closest+'.result.parameterV')
         mc.setAttr(follicle_shape+'.parameterU', u)
         mc.setAttr(follicle_shape+'.parameterV', v)
-        mc.parentConstraint(follicle_transform, geo, mo=True)
+        mc.parentConstraint(follicle_transform, ctrl_grp, mo=True)
+        # delete closestPointOnMesh node
         mc.delete(closest)
+
+
