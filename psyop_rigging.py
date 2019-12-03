@@ -233,4 +233,76 @@ def follicle_constraint():
         # delete closestPointOnMesh node
         mc.delete(closest)
 
+    
+def pole_vector(distance=10):
+    """Create a pole vector aim locator for the selected ik(s)"""
+    selected = mc.ls(sl=1)
+    for i in range(len(selected)):
+        loc = mc.spaceLocator()
+        loc_name = selected[i].replace('ikHandle', 'aim')
+        mc.rename(loc, loc_name)
+        start_jnt = selected[i].replace('ikHandle', '01_jnt')
+        mid_jnt = selected[i].replace('ikHandle', '05_jnt')
+        end_jnt = selected[i].replace('ikHandle', '07_jnt')
+        point = mc.pointConstraint(start_jnt, end_jnt, loc_name)
+        mc.delete(point)
+        aim = mc.aimConstraint(mid_jnt, loc_name, aimVector=[0, 0, 1])
+        mc.delete(aim)
+        mc.move(0, 0, distance, loc_name, relative=True, objectSpace=True, worldSpaceDistance=True)
+        mc.makeIdentity(loc_name, apply=True, translate=True, rotate=True, scale=True, normal=False, preserveNormals=True)
+        mc.poleVectorConstraint(loc_name, selected[i])
 
+import maya.OpenMaya as om
+import maya.cmds as mc
+import math
+
+def pole_vector_math()
+
+    sel = mc.ls(sl = 1)
+    # get transforms
+    start = mc.xform(sel[0] ,q= 1 ,ws = 1,t =1 )
+    mid = mc.xform(sel[1] ,q= 1 ,ws = 1,t =1 )
+    end = mc.xform(sel[2] ,q= 1 ,ws = 1,t =1 )
+    # get vectors
+    startV = om.MVector(start[0] ,start[1],start[2])
+    midV = om.MVector(mid[0] ,mid[1],mid[2])
+    endV = om.MVector(end[0] ,end[1],end[2])
+
+    startEnd = endV - startV
+    startMid = midV - startV
+
+    dotP = startMid * startEnd
+    proj = float(dotP) / float(startEnd.length())
+    startEndN = startEnd.normal()
+    projV = startEndN * proj
+
+    arrowV = startMid - projV
+    arrowV*= 0.5
+    finalV = arrowV + midV
+
+    cross1 = startEnd ^ startMid
+    cross1.normalize()
+
+    cross2 = cross1 ^ arrowV
+    cross2.normalize()
+    arrowV.normalize()
+
+    matrixV = [arrowV.x , arrowV.y , arrowV.z , 0 ,
+               cross1.x ,cross1.y , cross1.z , 0 ,
+               cross2.x , cross2.y , cross2.z , 0,
+               0,0,0,1]
+
+    matrixM = om.Matrix()
+
+    om.MScriptUtil.createMatrixFromList(matrixV , matrixM)
+
+    matrixFn = om.MTransformationMatrix(matrixM)
+
+    rot = matrixFn.eulerRotation()
+
+    loc = mc.spaceLocator()[0]
+    mc.xform(loc , ws =1 , t= (finalV.x , finalV.y ,finalV.z))
+
+    mc.xform ( loc , ws = 1 , rotation = ((rot.x/math.pi*180.0),
+             (rot.y/math.pi*180.0),
+             (rot.z/math.pi*180.0)))
