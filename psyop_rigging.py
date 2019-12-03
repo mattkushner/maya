@@ -233,25 +233,28 @@ def follicle_constraint():
         # delete closestPointOnMesh node
         mc.delete(closest)
 
-    
-def pole_vector(distance=10):
+def pole_vector():
     """Create a pole vector aim locator for the selected ik(s)"""
     selected = mc.ls(sl=1)
     for i in range(len(selected)):
         loc = mc.spaceLocator()
         loc_name = selected[i].replace('ikHandle', 'aim')
         mc.rename(loc, loc_name)
-        start_jnt = selected[i].replace('ikHandle', '01_jnt')
-        mid_jnt = selected[i].replace('ikHandle', '05_jnt')
-        end_jnt = selected[i].replace('ikHandle', '07_jnt')
-        point = mc.pointConstraint(start_jnt, end_jnt, loc_name)
+        # get root jnt for ik chain from ik connections
+        jnts = [j for j in mc.listConnections(selected[i]) if mc.nodeType(j) == 'joint']
+        start_jnt = jnts[0]
+        # move loc to root joint
+        point = mc.pointConstraint(start_jnt, loc_name)
         mc.delete(point)
-        aim = mc.aimConstraint(mid_jnt, loc_name, aimVector=[0, 0, 1])
-        mc.delete(aim)
-        mc.move(0, 0, distance, loc_name, relative=True, objectSpace=True, worldSpaceDistance=True)
+        # translate loc to root joint + poleVector values
+        for axis in ['x', 'y', 'z']:
+            pv = mc.getAttr(selected[i]+'.poleVector{AXIS}'.format(AXIS=axis.capitalize()))
+            t = mc.getAttr(loc_name+'.translate{AXIS}'.format(AXIS=axis.capitalize()))
+            mc.setAttr(loc_name+'.translate{AXIS}'.format(AXIS=axis.capitalize()), pv+t)
+        # freeze transforms on loc, set up pole vector constraint
         mc.makeIdentity(loc_name, apply=True, translate=True, rotate=True, scale=True, normal=False, preserveNormals=True)
         mc.poleVectorConstraint(loc_name, selected[i])
-
+        
 import maya.OpenMaya as om
 import maya.cmds as mc
 import math
