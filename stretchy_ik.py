@@ -1,6 +1,6 @@
-def make_ik_stretchy(ctrl):
+def make_ik_stretchy(ctrl): 
   # uses distance dimension
-    base =  '_'.join(ik_handle.split('_')[:-1])
+    base =  '_'.join(ctrl.split('_')[:-1])
     # get ik from ctrl
     ik_handle = base + '_ikHandle'
     if mc.nodeExists(ik_handle):
