@@ -233,6 +233,30 @@ def follicle_constraint():
         # delete closestPointOnMesh node
         mc.delete(closest)
 
+def locators_for_skinned_jnts(mesh, bind_pose=False):
+    """Function to generate baked world space locators for skinned joints. TO DO: option to set locator origin to bind pose"""
+    pcs = []
+    locs = []
+    jnts = mc.skinCluster(mesh, influence=True, query=True)
+    mc.select(jnts, replace=True)
+    #jnts = mc.ls(sl=1)
+    transform_list = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
+    start_frame = mc.playbackOptions(query=True, animationStartTime=True)
+    end_frame = mc.playbackOptions(query=True, animationEndTime=True)
+    for i in range(len(jnts)):
+        loc_name = '{J}_loc'.format(J=jnts[i].split('|')[-1])
+        loc = mc.spaceLocator()
+        mc.rename(loc, loc_name)
+        locs.append(loc_name)
+        pc = mc.parentConstraint(jnts[i], loc_name)
+        # if bind_pose, freeze transforms and re-constrain maintaining offset. still need logic to set bind pose
+        if bind_pose:
+            mc.delete(pc)
+            pc = mc.parentConstraint(jnts[i], loc_name, maintainOffset=True)
+        pcs.append(pc[0])
+    mc.bakeResults(locs, simulation=True, t=(start_frame, end_frame), disableImplicitControl=1, preserveOutsideKeys=1, shape=False, at=transform_list)
+    mc.delete(pcs)
+        
 def pole_vector():
     """Create a pole vector aim locator for the selected ik(s)"""
     selected = mc.ls(sl=1)
