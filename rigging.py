@@ -1,5 +1,17 @@
 import maya.cmds as mc
 
+def reverse_leg_setup(leg_name='l_b'):
+    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg."""
+    hip_jnt = '{L}_hip_jnt'.format(L=leg_name)
+    drv_jnt = hip_jnt.replace('_jnt', '_drv_jnt')
+    mc.duplicate(hip_jnt, name=drv_jnt)
+    # rename drv children
+    drv_kids = sorted(mc.listRelatives(drv_jnt, allDescendents=True, fullPath=True), key=lambda x: len(x), reverse=True)
+    for kid in drv_kids:
+        mc.rename(kid, kid.split('|')[-1].replace('_jnt', '_drv_jnt'))
+    
+
+
 def toe_group_setup(toe_name='l_b_index'):
     """Function to create single plane iks, parent into hierarchy and set pivots so they can be controlled"""
     jnts_dict = {'toe': {'name': '', 'translates': [0,0,0], 'child': 'claw', 'grp': ''},
