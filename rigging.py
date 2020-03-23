@@ -2,7 +2,7 @@ import maya.cmds as mc
 
 def reverse_leg_setup(leg_name='l_b'):
     """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg."""
-    leg_ctrl = '{L}+leg_foot_ctrl'.format(L=leg_name)
+    leg_ctrl = '{L}_leg_foot_ctrl'.format(L=leg_name)
     bones = ['hip', 'knee', 'ankle', 'ball', 'toe']
     leg_jnts = ['{L}_{B}_jnt'.format(L=leg_name, B=b) for b in bones]
     drv_jnts = [l.replace('_jnt', '_drv_jnt') for l in leg_jnts] 
@@ -20,6 +20,8 @@ def reverse_leg_setup(leg_name='l_b'):
        ik_name = '{L}_{N}_ik'.format(L=leg_name, N=name)
        mc.rename(ik[0], ik_name)
        mc.parent(ik_name, ik_dict['parent'])
+       mc.connectAttr(leg_ctrl+'_ankle_bend', drv_jnt[-2]+'.rotateZ')
+    mc.hide(drv_jnts[0])
 
 def toe_group_setup(toe_name='l_b_index'):
     """Function to create single plane iks, parent into hierarchy and set pivots so they can be controlled"""
