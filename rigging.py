@@ -19,8 +19,9 @@ def reverse_leg_setup(leg_name='l_b'):
        ik = mc.ikHandle(startJoint=ik_dict['start'], endEffector=ik_dict['end'], solver=ik_dict['solver'])
        ik_name = '{L}_{N}_ik'.format(L=leg_name, N=name)
        mc.rename(ik[0], ik_name)
+       mc.hide(ik_name)
        mc.parent(ik_name, ik_dict['parent'])
-       mc.connectAttr(leg_ctrl+'_ankle_bend', drv_jnt[-2]+'.rotateZ')
+    mc.connectAttr(leg_ctrl+'.ankle_bend', drv_jnts[-2]+'.rotateZ')
     mc.hide(drv_jnts[0])
 
 def toe_group_setup(toe_name='l_b_index'):
