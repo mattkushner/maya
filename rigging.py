@@ -2,6 +2,7 @@ import maya.cmds as mc
 
 def reverse_leg_setup(leg_name='l_b'):
     """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg."""
+    leg_ctrl = '{L}+leg_foot_ctrl'.format(L=leg_name)
     bones = ['hip', 'knee', 'ankle', 'ball', 'toe']
     leg_jnts = ['{L}_{B}_jnt'.format(L=leg_name, B=b) for b in bones]
     drv_jnts = [l.replace('_jnt', '_drv_jnt') for l in leg_jnts] 
@@ -11,13 +12,14 @@ def reverse_leg_setup(leg_name='l_b'):
     for i in range(len(drv_kids)):
         mc.rename(drv_kids[i], drv_jnts[-(i+1)])
     # setup iks
-    iks_dict = {'full': {'start': drv_jnts[0], 'end': drv_jnts[-2], 'solver': 'ikRPsolver'},
-                'upper': {'start': leg_jnts[0], 'end': leg_jnts[-3], 'solver': 'ikRPsolver'},
-                'lower': {'start': leg_jnts[-3], 'end': leg_jnts[-2], 'solver': 'ikSCsolver'}}
+    iks_dict = {'full': {'start': drv_jnts[0], 'end': drv_jnts[-2], 'parent': leg_ctrl, 'solver': 'ikRPsolver'},
+                'upper': {'start': leg_jnts[0], 'end': leg_jnts[-3], 'parent': drv_jnts[-2], 'solver': 'ikRPsolver'},
+                'lower': {'start': leg_jnts[-3], 'end': leg_jnts[-2], 'parent': drv_jnts[-3],'solver': 'ikSCsolver'}}
     for name, ik_dict in iks_dict.iteritems():
        ik = mc.ikHandle(startJoint=ik_dict['start'], endEffector=ik_dict['end'], solver=ik_dict['solver'])
-        ik_name = '{L}_{N}_ik'.format(L=leg_name, N=name)
-        mc.rename(ik[0], ik_name)
+       ik_name = '{L}_{N}_ik'.format(L=leg_name, N=name)
+       mc.rename(ik[0], ik_name)
+       mc.parent(ik_name, ik_dict['parent'])
 
 def toe_group_setup(toe_name='l_b_index'):
     """Function to create single plane iks, parent into hierarchy and set pivots so they can be controlled"""
