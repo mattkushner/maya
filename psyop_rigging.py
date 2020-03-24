@@ -232,52 +232,6 @@ def follicle_constraint():
         mc.parentConstraint(follicle_transform, ctrl_grp, mo=True)
         # delete closestPointOnMesh node
         mc.delete(closest)
-
-def locators_for_skinned_jnts(mesh, bind_pose=False):
-    """Function to generate baked world space locators for skinned joints. TO DO: option to set locator origin to bind pose"""
-    pcs = []
-    locs = []
-    jnts = mc.skinCluster(mesh, influence=True, query=True)
-    mc.select(jnts, replace=True)
-    #jnts = mc.ls(sl=1)
-    transform_list = ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']
-    start_frame = mc.playbackOptions(query=True, animationStartTime=True)
-    end_frame = mc.playbackOptions(query=True, animationEndTime=True)
-    for i in range(len(jnts)):
-        loc_name = '{J}_loc'.format(J=jnts[i].split('|')[-1])
-        loc = mc.spaceLocator()
-        mc.rename(loc, loc_name)
-        locs.append(loc_name)
-        pc = mc.parentConstraint(jnts[i], loc_name)
-        # if bind_pose, freeze transforms and re-constrain maintaining offset. still need logic to set bind pose
-        if bind_pose:
-            mc.delete(pc)
-            pc = mc.parentConstraint(jnts[i], loc_name, maintainOffset=True)
-        pcs.append(pc[0])
-    mc.bakeResults(locs, simulation=True, t=(start_frame, end_frame), disableImplicitControl=1, preserveOutsideKeys=1, shape=False, at=transform_list)
-    mc.delete(pcs)
-        
-def pole_vector():
-    """Create a pole vector aim locator for the selected ik(s)"""
-    selected = mc.ls(sl=1)
-    for i in range(len(selected)):
-        loc = mc.spaceLocator()
-        loc_name = selected[i].replace('ikHandle', 'aim')
-        mc.rename(loc, loc_name)
-        # get root jnt for ik chain from ik connections
-        jnts = [j for j in mc.listConnections(selected[i]) if mc.nodeType(j) == 'joint']
-        start_jnt = jnts[0]
-        # move loc to root joint
-        point = mc.pointConstraint(start_jnt, loc_name)
-        mc.delete(point)
-        # translate loc to root joint + poleVector values
-        for axis in ['x', 'y', 'z']:
-            pv = mc.getAttr(selected[i]+'.poleVector{AXIS}'.format(AXIS=axis.capitalize()))
-            t = mc.getAttr(loc_name+'.translate{AXIS}'.format(AXIS=axis.capitalize()))
-            mc.setAttr(loc_name+'.translate{AXIS}'.format(AXIS=axis.capitalize()), pv+t)
-        # freeze transforms on loc, set up pole vector constraint
-        mc.makeIdentity(loc_name, apply=True, translate=True, rotate=True, scale=True, normal=False, preserveNormals=True)
-        mc.poleVectorConstraint(loc_name, selected[i])
         
 import maya.OpenMaya as om
 import maya.cmds as mc
