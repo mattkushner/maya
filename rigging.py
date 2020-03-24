@@ -86,7 +86,7 @@ def pole_vector(y=45, leg='l_b'):
         mc.parent(loc_name, aim_ctrl)
     
 def toe_group_setup(toe_name='l_b_index'):
-    """Function to create single plane iks, parent into hierarchy and set pivots so they can be controlled"""
+    """Function to create single chain iks, parent into hierarchy and set pivots so they can be controlled"""
     jnts_dict = {'end': {'name': '', 'translates': [0,0,0], 'child': '', 'grp': ''},
                  'claw': {'name': '', 'translates': [0,0,0], 'child': 'end', 'grp': ''},
                  'toe': {'name': '', 'translates': [0,0,0], 'child': 'claw', 'grp': ''},
@@ -128,3 +128,10 @@ def toe_group_setup(toe_name='l_b_index'):
     mc.move(jnts_dict['end']['translates'][0],jnts_dict['end']['translates'][1],jnts_dict['end']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)    
     grp = mc.group(grp, name='{T}_clawStand_grp'.format(T=toe_name))
     mc.move(jnts_dict['end']['translates'][0],jnts_dict['end']['translates'][1],jnts_dict['end']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
+    foot_ctrl = '{F}_leg_foot_ctrl'.format(F='_'.join(toe_name.split('_')[:2]))
+    mc.parent(grp, foot_ctrl)
+    for attr in ['heelRotate', 'heelPivot', 'ballPivot', 'toePivot', 'toeStand', 'clawPivot', 'clawStand']:
+        axis = 'X'
+        if attr.endswith('Pivot'):
+            axis = 'Y'
+        mc.connectAttr('{C}.{A}'.format(C=foot_ctrl, A=attr), '{T}_{A}_grp.rotate{X}'.format(T=toe_name, A=attr, X=axis), force=True)
