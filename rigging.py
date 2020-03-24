@@ -49,16 +49,20 @@ def locators_for_skinned_jnts(mesh, bind_pose=False):
     mc.bakeResults(locs, simulation=True, t=(start_frame, end_frame), disableImplicitControl=1, preserveOutsideKeys=1, shape=False, at=transform_list)
     mc.delete(pcs)
         
-def pole_vector():
+def pole_vector(y=45, leg='l_b'):
     """Create a pole vector aim locator for the selected ik(s)"""
+    aim_ctrl = '{L}_knee_aim_ctrl'.format(L=leg)
     selected = mc.ls(sl=1)
     for i in range(len(selected)):
         loc = mc.spaceLocator()
         loc_name = selected[i].replace('ik', 'aim')
         mc.rename(loc, loc_name)
         # get root jnt for ik chain from ik connections
-        jnts = [j for j in mc.listConnections(selected[i]) if mc.nodeType(j) == 'joint']
-        start_jnt = jnts[0]
+        start_jnts = [j for j in mc.listConnections(selected[i]) if mc.nodeType(j) == 'joint']
+        start_jnt = start_jnts[0]
+        end_effetors = [j for j in mc.listConnections(selected[i]) if mc.nodeType(j) == 'ikEffector']
+        end_jnts = [j for j in mc.listConnections(end_effetors[0]) if mc.nodeType(j) == 'joint']
+        end_jnt = end_jnts[0]
         # move loc to root joint
         point = mc.pointConstraint(start_jnt, loc_name)
         mc.delete(point)
@@ -67,9 +71,13 @@ def pole_vector():
             pv = mc.getAttr(selected[i]+'.poleVector{AXIS}'.format(AXIS=axis.capitalize()))
             t = mc.getAttr(loc_name+'.translate{AXIS}'.format(AXIS=axis.capitalize()))
             mc.setAttr(loc_name+'.translate{AXIS}'.format(AXIS=axis.capitalize()), pv+t)
-        # freeze transforms on loc, set up pole vector constraint
-        mc.makeIdentity(loc_name, apply=True, translate=True, rotate=True, scale=True, normal=False, preserveNormals=True)
-        mc.poleVectorConstraint(loc_name, selected[i])    
+        # to orient on the pole vector plane, constrain to start and end jnts with ik as up vector
+        constraint = mc.aimConstraint(start_jnt, end_jnt, loc_name, aimVector=[-1,0,0], upVector=[0,1,0], worldUpType='object', worldUpObject=selected[i])
+        mc.delete(constraint)
+        mc.move(0, y, 0, loc_name, relative=True, objectSpace=True, worldSpaceDistance=True) 
+        #set up pole vector constraint
+        mc.poleVectorConstraint(loc_name, selected[i])
+        mc.parent(loc_name, aim_ctrl)
     
 def toe_group_setup(toe_name='l_b_index'):
     """Function to create single plane iks, parent into hierarchy and set pivots so they can be controlled"""
