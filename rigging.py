@@ -103,6 +103,10 @@ def toe_group_setup(toe_name='l_b_index'):
         mc.group(ik_name, name=grp_name)
         jnts_dict[name]['grp'] = grp_name
         mc.move(jnts_dict[name]['translates'][0],jnts_dict[name]['translates'][1],jnts_dict[name]['translates'][2],'{G}.rotatePivot'.format(G=grp_name),'{G}.scalePivot'.format(G=grp_name), rpr=True)
+        #connect ctrls to rotate grps
+        ctrl = jnt.replace('jnt', 'ctrl')
+        for attr in ['x', 'y', 'z']:
+            mc.connectAttr('{C}.rotate{A}'.format(C=ctrl, A=attr.capitalize()), '{G}.rotate{A}'.format(G=grp_name, A=attr.capitalize()))
     # nest groups and add parents
     mc.parent(jnts_dict['toe']['grp'], jnts_dict['ball']['grp'])
     mc.parent(jnts_dict['ball']['grp'], jnts_dict['ankle']['grp'])
@@ -110,9 +114,5 @@ def toe_group_setup(toe_name='l_b_index'):
     mc.move(jnts_dict['ankle']['translates'][0],0,jnts_dict['ankle']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
     grp = mc.group(grp, name='{T}_heelPivot_grp'.format(T=toe_name))
     mc.move(jnts_dict['ankle']['translates'][0],0,jnts_dict['ankle']['translates'][2]+.01,'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
-    grp = mc.group(grp, name='{T}_ballPivot_grp'.format(T=toe_name))
-    mc.move(jnts_dict['ball']['translates'][0],jnts_dict['ball']['translates'][1],jnts_dict['ball']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
-    grp = mc.group(grp, name='{T}_toePivot_grp'.format(T=toe_name))
-    mc.move(jnts_dict['toe']['translates'][0],jnts_dict['toe']['translates'][1],jnts_dict['toe']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
     grp = mc.group(grp, name='{T}_toeStand_grp'.format(T=toe_name))
     mc.move(jnts_dict['toe']['translates'][0],jnts_dict['toe']['translates'][1],jnts_dict['toe']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
