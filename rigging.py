@@ -14,7 +14,8 @@ def reverse_leg_setup(leg_name='l_b'):
     # setup iks
     iks_dict = {'full': {'start': drv_jnts[0], 'end': drv_jnts[-2], 'parent': leg_ctrl, 'solver': 'ikRPsolver'},
                 'upper': {'start': leg_jnts[0], 'end': leg_jnts[-3], 'parent': drv_jnts[-2], 'solver': 'ikRPsolver'},
-                'lower': {'start': leg_jnts[-3], 'end': leg_jnts[-2], 'parent': drv_jnts[-3],'solver': 'ikSCsolver'}}
+                'lower': {'start': leg_jnts[-3], 'end': leg_jnts[-2], 'parent': drv_jnts[-3], 'solver': 'ikSCsolver'},
+                'foot': {'start': leg_jnts[-2], 'end': leg_jnts[-1], 'parent': leg_ctrl, 'solver': 'ikSCsolver'}}
     for name, ik_dict in iks_dict.iteritems():
        ik = mc.ikHandle(startJoint=ik_dict['start'], endEffector=ik_dict['end'], solver=ik_dict['solver'])
        ik_name = '{L}_{N}_ik'.format(L=leg_name, N=name)
