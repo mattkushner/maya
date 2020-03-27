@@ -140,6 +140,7 @@ def toe_group_setup(toe_name='l_b_index'):
         if attr.endswith('Pivot'):
             axis = 'Y'
         mc.connectAttr('{C}.{A}'.format(C=foot_ctrl, A=attr), '{T}_{A}_grp.rotate{X}'.format(T=toe_name, A=attr, X=axis), force=True)
+
 def finger_group_setup(toe_name='l_f_index'):
     """Function to create single plane iks, parent into hierarchy and set pivots so they can be controlled"""
     jnts_dict = {'end': {'name': '', 'translates': [0,0,0], 'child': '', 'grp': ''},
@@ -147,9 +148,17 @@ def finger_group_setup(toe_name='l_f_index'):
                  'finger': {'name': '', 'translates': [0,0,0], 'child': 'claw', 'grp': ''},
                  'palm': {'name': '', 'translates': [0,0,0], 'child': 'finger', 'grp': ''},
                  'wrist': {'name': '', 'translates': [0,0,0], 'child': 'palm', 'grp': ''}}
+    if 'thumb' in toe_name:
+        jnts_dict.pop('palm')
+        jnts_dict['wrist']['child'] = 'finger'
     for name, jnt_dict in  jnts_dict.iteritems():
-        jnt = '{T}_{N}_jnt'.format(T=toe_name, N=name)
-        child = '{T}_{C}_jnt'.format(T=toe_name, C=jnt_dict['child'])
+        ext = 'jnt_bnd'
+        if name == 'end':
+            ext = 'jnt'
+        jnt = '{T}_{N}_{E}'.format(T=toe_name, N=name, E=ext)
+        if jnt_dict['child'] == 'end':
+            ext = 'jnt'
+        child = '{T}_{C}_{E}'.format(T=toe_name, C=jnt_dict['child'], E=ext)
         jnts_dict[name]['name'] = jnt
         jnts_dict[name]['translates'] = mc.xform(jnt, query=True, worldSpace=True, translation=True)
         # create ik between jnt & child
