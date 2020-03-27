@@ -86,15 +86,20 @@ def pole_vector(y=45, leg='l_b'):
         mc.parent(loc_name, aim_ctrl)
     
 def toe_group_setup(toe_name='l_b_index'):
-    """Function to create single chain iks, parent into hierarchy and set pivots so they can be controlled"""
+    """Function to create single plane iks, parent into hierarchy and set pivots so they can be controlled"""
     jnts_dict = {'end': {'name': '', 'translates': [0,0,0], 'child': '', 'grp': ''},
                  'claw': {'name': '', 'translates': [0,0,0], 'child': 'end', 'grp': ''},
                  'toe': {'name': '', 'translates': [0,0,0], 'child': 'claw', 'grp': ''},
                  'ball': {'name': '', 'translates': [0,0,0], 'child': 'toe', 'grp': ''},
                  'ankle': {'name': '', 'translates': [0,0,0], 'child': 'ball', 'grp': ''}}
     for name, jnt_dict in  jnts_dict.iteritems():
-        jnt = '{T}_{N}_jnt'.format(T=toe_name, N=name)
-        child = '{T}_{C}_jnt'.format(T=toe_name, C=jnt_dict['child'])
+        ext = 'jnt_bnd'
+        if name == 'end':
+            ext = 'jnt'
+        jnt = '{T}_{N}_{E}'.format(T=toe_name, N=name, E=ext)
+        if jnt_dict['child'] == 'end':
+            ext = 'jnt'
+        child = '{T}_{C}_{E}'.format(T=toe_name, C=jnt_dict['child'], E=ext)
         jnts_dict[name]['name'] = jnt
         jnts_dict[name]['translates'] = mc.xform(jnt, query=True, worldSpace=True, translation=True)
         # create ik between jnt & child
@@ -107,7 +112,7 @@ def toe_group_setup(toe_name='l_b_index'):
             jnts_dict[name]['grp'] = grp_name
             mc.move(jnts_dict[name]['translates'][0],jnts_dict[name]['translates'][1],jnts_dict[name]['translates'][2],'{G}.rotatePivot'.format(G=grp_name),'{G}.scalePivot'.format(G=grp_name), rpr=True)
             #connect ctrls to rotate grps
-            ctrl = jnt.replace('jnt', 'ctrl')
+            ctrl = jnt.replace('_bnd', '').replace('jnt', 'ctrl')
             for attr in ['x', 'y', 'z']:
                 mc.connectAttr('{C}.rotate{A}'.format(C=ctrl, A=attr.capitalize()), '{G}.rotate{A}'.format(G=grp_name, A=attr.capitalize()))
     # nest groups and add parents
@@ -135,7 +140,6 @@ def toe_group_setup(toe_name='l_b_index'):
         if attr.endswith('Pivot'):
             axis = 'Y'
         mc.connectAttr('{C}.{A}'.format(C=foot_ctrl, A=attr), '{T}_{A}_grp.rotate{X}'.format(T=toe_name, A=attr, X=axis), force=True)
-
 def finger_group_setup(toe_name='l_f_index'):
     """Function to create single plane iks, parent into hierarchy and set pivots so they can be controlled"""
     jnts_dict = {'end': {'name': '', 'translates': [0,0,0], 'child': '', 'grp': ''},
