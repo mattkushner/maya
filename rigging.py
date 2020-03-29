@@ -1,6 +1,6 @@
 import maya.cmds as mc
 
-def reverse_leg_setup(leg_name='l_b'):
+def reverse_leg_setup_bend(leg_name='l_b'):
     """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning."""
     # setup iks
     leg_ctrl = '{L}_leg_foot_ctrl'.format(L=leg_name)
@@ -141,30 +141,30 @@ def toe_group_setup(toe_name='l_b_index'):
             axis = 'Y'
         mc.connectAttr('{C}.{A}'.format(C=foot_ctrl, A=attr), '{T}_{A}_grp.rotate{X}'.format(T=toe_name, A=attr, X=axis), force=True)
 
-def finger_group_setup(toe_name='l_f_index'):
+def finger_group_setup(finger_name='l_f_index'):
     """Function to create single plane iks, parent into hierarchy and set pivots so they can be controlled"""
     jnts_dict = {'end': {'name': '', 'translates': [0,0,0], 'child': '', 'grp': ''},
                  'claw': {'name': '', 'translates': [0,0,0], 'child': 'end', 'grp': ''},
                  'finger': {'name': '', 'translates': [0,0,0], 'child': 'claw', 'grp': ''},
                  'palm': {'name': '', 'translates': [0,0,0], 'child': 'finger', 'grp': ''},
                  'wrist': {'name': '', 'translates': [0,0,0], 'child': 'palm', 'grp': ''}}
-    if 'thumb' in toe_name:
+    if 'thumb' in finger_name:
         jnts_dict.pop('palm')
         jnts_dict['wrist']['child'] = 'finger'
     for name, jnt_dict in  jnts_dict.iteritems():
         ext = 'jnt_bnd'
         if name == 'end':
             ext = 'jnt'
-        jnt = '{T}_{N}_{E}'.format(T=toe_name, N=name, E=ext)
+        jnt = '{F}_{N}_{E}'.format(F=finger_name, N=name, E=ext)
         if jnt_dict['child'] == 'end':
             ext = 'jnt'
-        child = '{T}_{C}_{E}'.format(T=toe_name, C=jnt_dict['child'], E=ext)
+        child = '{F}_{C}_{E}'.format(F=finger_name, C=jnt_dict['child'], E=ext)
         jnts_dict[name]['name'] = jnt
         jnts_dict[name]['translates'] = mc.xform(jnt, query=True, worldSpace=True, translation=True)
         # create ik between jnt & child
         if name != 'end':
             ik = mc.ikHandle(startJoint=jnt, endEffector=child, solver='ikSCsolver')
-            ik_name = '{T}_{N}_ik'.format(T=toe_name, N=name)
+            ik_name = '{F}_{N}_ik'.format(F=finger_name, N=name)
             grp_name = '{I}_grp'.format(I=ik_name).replace('_ik', 'Rotate')
             mc.rename(ik[0], ik_name)
             mc.group(ik_name, name=grp_name)
@@ -178,24 +178,24 @@ def finger_group_setup(toe_name='l_f_index'):
     mc.parent(jnts_dict['claw']['grp'], jnts_dict['finger']['grp'])
     mc.parent(jnts_dict['finger']['grp'], jnts_dict['palm']['grp'])
     mc.parent(jnts_dict['palm']['grp'], jnts_dict['wrist']['grp'])
-    grp = mc.group(jnts_dict['wrist']['grp'], name='{T}_wristRotate_grp'.format(T=toe_name))
+    grp = mc.group(jnts_dict['wrist']['grp'], name='{F}_wristRotate_grp'.format(F=finger_name))
     mc.move(jnts_dict['wrist']['translates'][0],0,jnts_dict['wrist']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
-    grp = mc.group(grp, name='{T}_wristPivot_grp'.format(T=toe_name))
+    grp = mc.group(grp, name='{F}_wristPivot_grp'.format(F=finger_name))
     mc.move(jnts_dict['wrist']['translates'][0],0,jnts_dict['wrist']['translates'][2]+.01,'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
-    grp = mc.group(grp, name='{T}_palmPivot_grp'.format(T=toe_name))
+    grp = mc.group(grp, name='{F}_palmPivot_grp'.format(F=finger_name))
     mc.move(jnts_dict['finger']['translates'][0],jnts_dict['finger']['translates'][1],jnts_dict['finger']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
-    grp = mc.group(grp, name='{T}_fingerPivot_grp'.format(T=toe_name))
+    grp = mc.group(grp, name='{F}_fingerPivot_grp'.format(F=finger_name))
     mc.move(jnts_dict['claw']['translates'][0],jnts_dict['claw']['translates'][1],jnts_dict['claw']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)    
-    grp = mc.group(grp, name='{T}_fingerStand_grp'.format(T=toe_name))
+    grp = mc.group(grp, name='{F}_fingerStand_grp'.format(F=finger_name))
     mc.move(jnts_dict['claw']['translates'][0],jnts_dict['claw']['translates'][1],jnts_dict['claw']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
-    grp = mc.group(grp, name='{T}_clawPivot_grp'.format(T=toe_name))
+    grp = mc.group(grp, name='{F}_clawPivot_grp'.format(F=finger_name))
     mc.move(jnts_dict['end']['translates'][0],jnts_dict['end']['translates'][1],jnts_dict['end']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)    
-    grp = mc.group(grp, name='{T}_clawStand_grp'.format(T=toe_name))
+    grp = mc.group(grp, name='{F}_clawStand_grp'.format(F=finger_name))
     mc.move(jnts_dict['end']['translates'][0],jnts_dict['end']['translates'][1],jnts_dict['end']['translates'][2],'{G}.rotatePivot'.format(G=grp),'{G}.scalePivot'.format(G=grp), rpr=True)
-    foot_ctrl = '{F}_leg_foot_ctrl'.format(F='_'.join(toe_name.split('_')[:2]))
+    foot_ctrl = '{F}_leg_foot_ctrl'.format(F='_'.join(finger_name.split('_')[:2]))
     mc.parent(grp, foot_ctrl)
     for attr in ['wristRotate', 'wristPivot', 'palmPivot', 'fingerPivot', 'fingerStand', 'clawPivot', 'clawStand']:
         axis = 'X'
         if attr.endswith('Pivot'):
             axis = 'Y'
-        mc.connectAttr('{C}.{A}'.format(C=foot_ctrl, A=attr), '{T}_{A}_grp.rotate{X}'.format(T=toe_name, A=attr, X=axis), force=True)
+        mc.connectAttr('{C}.{A}'.format(C=foot_ctrl, A=attr), '{F}_{A}_grp.rotate{X}'.format(F=finger_name, A=attr, X=axis), force=True)
