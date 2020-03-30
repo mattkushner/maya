@@ -2,8 +2,8 @@ import maya.cmds as mc
 
 import collections
 def reverse_leg_setup_spring(leg_name='l_b'):
-    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning.
-    NOTE: move values for poleVector locators and ankleTwist value need to be switched to +/- for mirrorerd leg"""
+    """Function to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning.
+    NOTE: move values for poleVector locators and ankleTwist value need to be switched to +/- for mirrored leg"""
     # setup iks
     leg_ctrl = '{L}_leg_foot_ctrl'.format(L=leg_name)
     bones = ['hip', 'knee', 'ankle', 'ball', 'toe']
@@ -31,6 +31,8 @@ def reverse_leg_setup_spring(leg_name='l_b'):
     for name, loc_dict in locs_dict.iteritems():
         # name, parent under jnt, zero out, move locally
         loc_name = '{L}_leg_{N}_loc'.format(L=leg_name, N=name)
+        if mc.objExists(loc_name):
+            mc.delete(loc_name)
         mc.spaceLocator(name=loc_name)
         mc.parent(loc_name, loc_dict['parent'])
         for attr in ['tx', 'ty', 'tz', 'rx', 'ry', 'rz']:
@@ -40,12 +42,10 @@ def reverse_leg_setup_spring(leg_name='l_b'):
         mc.parent(loc_name, world=True)  
     for name, ik_dict in iks_dict.iteritems():
        ik_name = '{L}_{N}_ik'.format(L=leg_name, N=name)
-       ik = mc.ikHandle(startJoint=ik_dict['start'], endEffector=ik_dict['end'], solver=ik_dict['solver'], sticky=False)
+       ik = mc.ikHandle(startJoint=ik_dict['start'], endEffector=ik_dict['end'], solver=ik_dict['solver'], sticky=0)
        if name == 'drv_sp':
-           try:
+           if not mc.pluginInfo('ikSpringSolver.mll', query=True, loaded=True):
                mc.loadPlugin('ikSpringSolver.mll')
-           except:
-               pass
            mc.connectAttr('ikSpringSolver.message', '{I}.ikSolver'.format(I=ik[0]), force=True)
        mc.rename(ik[0], ik_name)
        # set up pole vectors
@@ -56,6 +56,8 @@ def reverse_leg_setup_spring(leg_name='l_b'):
            if 'ankleTwist' in loc_name:
                mc.setAttr('{I}.offset'.format(I=ik_name), -90)
                plus = loc_name.replace('_loc', '_plus')
+               if mc.objExists(plus):
+                   mc.delete(plus)
                mc.shadingNode('plusMinusAverage', asUtility=True, name=plus)
                mc.connectAttr('{L}.ankleTwist'.format(L=leg_ctrl), '{P}.input1D[0]'.format(P=plus), force=True)
                mc.connectAttr('{I}.offset'.format(I=ik_name), '{P}.input1D[1]'.format(P=plus), force=True)
