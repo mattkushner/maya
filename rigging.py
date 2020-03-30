@@ -2,7 +2,8 @@ import maya.cmds as mc
 
 import collections
 def reverse_leg_setup_spring(leg_name='l_b'):
-    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning."""
+    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning.
+    NOTE: move values for poleVector locators and ankleTwist value need to be switched to +/- for mirrorerd leg"""
     # setup iks
     leg_ctrl = '{L}_leg_foot_ctrl'.format(L=leg_name)
     bones = ['hip', 'knee', 'ankle', 'ball', 'toe']
