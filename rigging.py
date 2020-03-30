@@ -63,6 +63,11 @@ def reverse_leg_setup_spring(leg_name='l_b'):
        mc.parent(ik_name, leg_ctrl)
     mc.parent(leg_jnts[0], drv_jnts[0])
     mc.hide(drv_jnts[1])
+    # set up hip ctrl
+    hip_ctrl = '{L}_leg_hip_ctrl'.format(L=leg_name)
+    hip_ctrl_grp = hip_ctrl+'_grp'
+    mc.orientConstraint(hip_ctrl_grp, drv_jnts[0]) 
+    mc.orientConstraint(leg_jnts[0], hip_ctrl)
 
 def reverse_leg_setup_bend(leg_name='l_b'):
     """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg, with ankle bend. Self cleaning."""
