@@ -1,7 +1,7 @@
 import maya.cmds as mc
 
 def reverse_leg_setup_twist(leg_name='l_b'):
-    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning."""
+    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg, with hip ctrl and ankle twist. Self cleaning."""
     # setup iks
     leg_ctrl = '{L}_leg_foot_ctrl'.format(L=leg_name)
     bones = ['hip', 'knee', 'ankle', 'ball', 'toe']
@@ -31,7 +31,7 @@ def reverse_leg_setup_twist(leg_name='l_b'):
     mc.hide(drv_jnts[1])
 
 def reverse_leg_setup_bend(leg_name='l_b'):
-    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning."""
+    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg, with ankle bend. Self cleaning."""
     # setup iks
     leg_ctrl = '{L}_leg_foot_ctrl'.format(L=leg_name)
     bones = ['hip', 'knee', 'ankle', 'ball', 'toe']
