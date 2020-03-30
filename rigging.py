@@ -1,16 +1,18 @@
 import maya.cmds as mc
 
-def reverse_leg_setup_twist(leg_name='l_b'):
-    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg, with hip ctrl and ankle twist. Self cleaning."""
+import collections
+def reverse_leg_setup_spring(leg_name='l_b'):
+    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning."""
     # setup iks
     leg_ctrl = '{L}_leg_foot_ctrl'.format(L=leg_name)
     bones = ['hip', 'knee', 'ankle', 'ball', 'toe']
     leg_jnts = ['{L}_{B}_jnt'.format(L=leg_name, B=b) for b in bones]
     drv_jnts = [l.replace('_jnt', '_drv_jnt') for l in leg_jnts]
-    iks_dict = {'drv_sp': {'start': drv_jnts[0], 'end': drv_jnts[3], 'solver': 'ikSpringSolver'},
-                'bnd_rp': {'start': leg_jnts[1], 'end': leg_jnts[3], 'solver': 'ikRPsolver'},
-                'drv_sc': {'start': leg_jnts[3], 'end': leg_jnts[4], 'solver': 'ikSCsolver'},
-                'bnd_sc': {'start': leg_jnts[3], 'end': leg_jnts[4], 'solver': 'ikSCsolver'}}
+    iks_dict = collections.OrderedDict()
+    iks_dict['drv_sc'] = {'start': leg_jnts[3], 'end': leg_jnts[4], 'solver': 'ikSCsolver'}
+    iks_dict['drv_sp'] = {'start': drv_jnts[0], 'end': drv_jnts[3], 'solver': 'ikRPsolver', 'pole': 'aim'}
+    iks_dict['bnd_sc'] = {'start': leg_jnts[3], 'end': leg_jnts[4], 'solver': 'ikSCsolver'}
+    iks_dict['bnd_rp'] = {'start': leg_jnts[1], 'end': leg_jnts[3], 'solver': 'ikRPsolver', 'pole': 'ankleTwist'}
     for name, ik_dict in iks_dict.iteritems():
         ik_name = '{L}_{N}_ik'.format(L=leg_name, N=name)
         if mc.objExists(ik_name):
@@ -22,12 +24,44 @@ def reverse_leg_setup_twist(leg_name='l_b'):
     drv_kids = sorted(mc.listRelatives(drv_jnts[0], allDescendents=True, fullPath=True), key=lambda x: len(x), reverse=True)
     for i in range(len(drv_kids)):
         mc.rename(drv_kids[i], drv_jnts[-(i+1)])
+    # locator setups (aim & twist)
+    locs_dict = {'aim': {'parent': drv_jnts[1], 'move': [0, -16, -25]},
+                 'ankleTwist': {'parent': leg_jnts[3], 'move': [10, 0, 0]}}
+    for name, loc_dict in locs_dict.iteritems():
+        # name, parent under jnt, zero out, move locally
+        loc_name = '{L}_leg_{N}_loc'.format(L=leg_name, N=name)
+        mc.spaceLocator(name=loc_name)
+        mc.parent(loc_name, loc_dict['parent'])
+        for attr in ['tx', 'ty', 'tz', 'rx', 'ry', 'rz']:
+            mc.setAttr('{L}.{A}'.format(L=loc_name, A=attr), 0)
+        # move out from ik locally, unparent and set up poleVector
+        mc.move(loc_dict['move'][0], loc_dict['move'][1], loc_dict['move'][2], loc_name, relative=True, objectSpace=True, worldSpaceDistance=True)
+        mc.parent(loc_name, world=True)  
     for name, ik_dict in iks_dict.iteritems():
        ik_name = '{L}_{N}_ik'.format(L=leg_name, N=name)
-       ik = mc.ikHandle(startJoint=ik_dict['start'], endEffector=ik_dict['end'], solver=ik_dict['solver'])
+       ik = mc.ikHandle(startJoint=ik_dict['start'], endEffector=ik_dict['end'], solver=ik_dict['solver'], sticky=False)
+       if name == 'drv_sp':
+           try:
+               mc.loadPlugin('ikSpringSolver.mll')
+           except:
+               pass
+           mc.connectAttr('ikSpringSolver.message', '{I}.ikSolver'.format(I=ik[0]), force=True)
        mc.rename(ik[0], ik_name)
+       # set up pole vectors
+       if 'pole' in ik_dict.keys():
+           loc_name = '{L}_leg_{P}_loc'.format(L=leg_name, P=ik_dict['pole'])
+           mc.poleVectorConstraint(loc_name, ik_name)
+           # twist setup
+           if 'ankleTwist' in loc_name:
+               mc.setAttr('{I}.offset'.format(I=ik_name), -90)
+               plus = loc_name.replace('_loc', '_plus')
+               mc.shadingNode('plusMinusAverage', asUtility=True, name=plus)
+               mc.connectAttr('{L}.ankleTwist'.format(L=leg_ctrl), '{P}.input1D[0]'.format(P=plus), force=True)
+               mc.connectAttr('{I}.offset'.format(I=ik_name), '{P}.input1D[1]'.format(P=plus), force=True)
+               mc.connectAttr('{P}.output1D'.format(P=plus), '{I}.twist'.format(I=ik_name), force=True)
        mc.hide(ik_name)
        mc.parent(ik_name, leg_ctrl)
+    mc.parent(leg_jnts[0], drv_jnts[0])
     mc.hide(drv_jnts[1])
 
 def reverse_leg_setup_bend(leg_name='l_b'):
