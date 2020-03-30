@@ -2,8 +2,7 @@ import maya.cmds as mc
 
 import collections
 def reverse_leg_setup_spring(leg_name='l_b'):
-    """Function to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning.
-    NOTE: move values for poleVector locators and ankleTwist value need to be switched to +/- for mirrored leg"""
+    """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg. Self cleaning."""
     # setup iks
     leg_ctrl = '{L}_leg_foot_ctrl'.format(L=leg_name)
     bones = ['hip', 'knee', 'ankle', 'ball', 'toe']
@@ -38,6 +37,8 @@ def reverse_leg_setup_spring(leg_name='l_b'):
         for attr in ['tx', 'ty', 'tz', 'rx', 'ry', 'rz']:
             mc.setAttr('{L}.{A}'.format(L=loc_name, A=attr), 0)
         # move out from ik locally, unparent and set up poleVector
+        if leg_name.startswith('r_'):
+            loc_dict['move'] = [-x for x in loc_dict['move']]
         mc.move(loc_dict['move'][0], loc_dict['move'][1], loc_dict['move'][2], loc_name, relative=True, objectSpace=True, worldSpaceDistance=True)
         mc.parent(loc_name, world=True)  
     for name, ik_dict in iks_dict.iteritems():
@@ -53,8 +54,11 @@ def reverse_leg_setup_spring(leg_name='l_b'):
            loc_name = '{L}_leg_{P}_loc'.format(L=leg_name, P=ik_dict['pole'])
            mc.poleVectorConstraint(loc_name, ik_name)
            # twist setup
+           twist = -90
            if 'ankleTwist' in loc_name:
-               mc.setAttr('{I}.offset'.format(I=ik_name), -90)
+               if leg_name.startswith('r_'):
+                   twist = -twist
+               mc.setAttr('{I}.offset'.format(I=ik_name), twist)
                plus = loc_name.replace('_loc', '_plus')
                if mc.objExists(plus):
                    mc.delete(plus)
@@ -71,6 +75,7 @@ def reverse_leg_setup_spring(leg_name='l_b'):
     hip_ctrl_grp = hip_ctrl+'_grp'
     mc.orientConstraint(drv_jnts[0], hip_ctrl_grp) 
     mc.orientConstraint(hip_ctrl, leg_jnts[0])
+        
 
 def reverse_leg_setup_bend(leg_name='l_b'):
     """Functiom to duplicate leg as a drv chain and set up two sets of iks for driving the leg, with ankle bend. Self cleaning."""
