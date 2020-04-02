@@ -289,9 +289,10 @@ def fixWeights():
     for i in range(len(verts)):
         keys = mc.skinPercent('skinCluster393', verts[i], query=True, transform=None)
         values = mc.skinPercent('skinCluster393', verts[i], query=True, value= True)
-        inf_dict = { k : v for k in keys for v in values }
+        inf_dict = {keys[i]: values[i] for i in range(len(keys))} 
         mc.select(verts[i], replace=True)
         for k, v in inf_dict.iteritems():
             if k.startswith('l_') and v != 0:
-                mc.skinPercent('skinCluster393', verts[i], transformMoveWeights=[k, k.replace('l_', 'r_', 1)])
+                new_k = k.replace('l_', 'r_', 1) 
+                mc.skinPercent('skinCluster393', transformMoveWeights=[k, new_k])
     mc.select(verts, replace=True)
