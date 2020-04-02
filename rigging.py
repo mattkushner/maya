@@ -281,3 +281,17 @@ def finger_group_setup(toe_name='l_f_index'):
         if attr.endswith('Pivot'):
             axis = 'Y'
         mc.connectAttr('{C}.{A}'.format(C=foot_ctrl, A=attr), '{T}_{A}_grp.rotate{X}'.format(T=toe_name, A=attr, X=axis), force=True)
+
+def fixWeights():
+    # function to take right side verts and remap left weights to right side
+    selected = mc.ls(sl=1)
+    verts = mc.filterExpand(selected, selectionMask=31)
+    for i in range(len(verts)):
+        keys = mc.skinPercent('skinCluster393', verts[i], query=True, transform=None)
+        values = mc.skinPercent('skinCluster393', verts[i], query=True, value= True)
+        inf_dict = { k : v for k in keys for v in values }
+        mc.select(verts[i], replace=True)
+        for k, v in inf_dict.iteritems():
+            if k.startswith('l_') and v != 0:
+                mc.skinPercent('skinCluster393', verts[i], transformMoveWeights=[k, k.replace('l_', 'r_', 1)])
+    mc.select(verts, replace=True)
