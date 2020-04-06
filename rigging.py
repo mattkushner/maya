@@ -296,3 +296,26 @@ def fixWeights():
                 new_k = k.replace('l_', 'r_', 1) 
                 mc.skinPercent('skinCluster393', transformMoveWeights=[k, new_k])
     mc.select(verts, replace=True)
+    
+    fix_weights()
+
+influences = mc.skinCluster('skinCluster393',query=True,inf=True)
+inf_dict = { i : 0 for i in influences }
+
+
+def fix_weights(side='l_', skin='skinCluster394'):
+    # function to take selected verts and remap side weights to other side
+    side_dict = {'l_': 'r_', 'r_':'l_'}
+    other_side = side_dict[side]
+    selected = mc.ls(sl=1)
+    verts = mc.filterExpand(selected, selectionMask=31)
+    for i in range(len(verts)):
+        keys = mc.skinPercent(skin, verts[i], query=True, transform=None)
+        values = mc.skinPercent(skin, verts[i], query=True, value= True)
+        inf_dict = {keys[i]: values[i] for i in range(len(keys))} 
+        mc.select(verts[i], replace=True)
+        for k, v in inf_dict.iteritems():
+            if k.startswith(side) and v != 0:
+                new_k = k.replace(side, other_side, 1) 
+                mc.skinPercent(skin, transformMoveWeights=[k, new_k])
+    mc.select(verts, replace=True)
