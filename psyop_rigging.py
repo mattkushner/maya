@@ -196,17 +196,20 @@ def generate_modeling_data(top_node='GEO', yaml_path=r'C:\Users\mkushner\corteva
                 data = mc.polyEditUV('{GEO}.map[*]'.format(GEO=geo), query=True, u=True, v=True)
             data_dict[geo][key] = {k: v for k, v in zip(range(num), [list(t) for t in zip(*[iter(data)]*value)])}
     createYaml(data_dict, yaml_path)
-
+    
 def follicle_constraint():
     #parse selection for ctrl (assumes ctrl has a parent grp for constraint), then geo
+    # jnts need to be direct connected to ctrls to avoid cycle issues, which means zero-ed out with parents containing transforms
+    # negate_grp needs to exist btwn ctrl & grp: ctrl.t -> mult*-1 -> negate_grp.t
     selected = mc.ls(sl=True)
     if len(selected) == 2:
         ctrl, geo = selected
+        mesh = mc.listRelatives(geo, children=True)[0]
         ctrl_grp = mc.listRelatives(ctrl, parent=True)[0]
         # create closestPointOnMesh to calculate where the follicle should go in u & v
         closest = mc.createNode('closestPointOnMesh')
         mc.connectAttr(geo+'.outMesh', closest+'.inMesh')
-        trans = mc.xform(ctrl, translation=True, query=True)
+        trans = mc.xform(ctrl, rotatePivot=True, query=True, worldSpace=True)
         mc.setAttr(closest+'.inPositionX', trans[0])
         mc.setAttr(closest+'.inPositionY', trans[1])
         mc.setAttr(closest+'.inPositionZ', trans[2])
@@ -221,17 +224,19 @@ def follicle_constraint():
         mc.connectAttr(follicle_shape+'.outRotate', follicle_transform+'.rotate')
         mc.connectAttr(follicle_shape+'.outTranslate', follicle_transform+'.translate')
         # connect geo to follicle
-        mc.connectAttr(geo+'.worldMatrix', follicle_shape+'.inputWorldMatrix')
-        mc.connectAttr(geo+'.outMesh', follicle_shape+'.inputMesh')
+        mc.connectAttr(mesh+'.worldMatrix', follicle_shape+'.inputWorldMatrix')
+        mc.connectAttr(mesh+'.outMesh', follicle_shape+'.inputMesh')
         mc.setAttr(follicle_shape+'.simulationMethod', 0)
         # determine u & v, parent constrain grp to follicle
         u = mc.getAttr(closest+'.result.parameterU')
         v = mc.getAttr(closest+'.result.parameterV')
         mc.setAttr(follicle_shape+'.parameterU', u)
         mc.setAttr(follicle_shape+'.parameterV', v)
-        mc.parentConstraint(follicle_transform, ctrl_grp, mo=True)
+        mc.pointConstraint(follicle_transform, ctrl_grp, mo=True)
         # delete closestPointOnMesh node
         mc.delete(closest)
+    else:
+        print('You must have exactly one CTRL and one MESH selected.')
         
 import maya.OpenMaya as om
 import maya.cmds as mc
