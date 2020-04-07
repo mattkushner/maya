@@ -196,6 +196,17 @@ def generate_modeling_data(top_node='GEO', yaml_path=r'C:\Users\mkushner\corteva
                 data = mc.polyEditUV('{GEO}.map[*]'.format(GEO=geo), query=True, u=True, v=True)
             data_dict[geo][key] = {k: v for k, v in zip(range(num), [list(t) for t in zip(*[iter(data)]*value)])}
     createYaml(data_dict, yaml_path)
+
+    
+def jnt_grps():
+    # function to take selected jnts, givem them a parent and transfer transforms to parent (prep for follice setup below)
+    jnts = mc.ls(sl=1)
+    for jnt in jnts:
+        grp_name = jnt+'_grp'
+        trans = mc.getAttr(jnt+'.t')[0]
+        mc.group(jnt, name=grp_name)
+        mc.setAttr(grp_name+'.t', *trans, type='double3')
+        mc.setAttr(jnt+'.t', 0,0,0, type='double3')
     
 def follicle_constraint():
     #parse selection for ctrl (assumes ctrl has a parent grp for constraint), then geo
