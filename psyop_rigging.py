@@ -207,7 +207,35 @@ def jnt_grps():
         mc.group(jnt, name=grp_name)
         mc.setAttr(grp_name+'.t', *trans, type='double3')
         mc.setAttr(jnt+'.t', 0,0,0, type='double3')
-    
+
+def ctrl_grps():
+    # function to make negate and top groups for ctrls (prep for follicle setup below)
+    ctrls = mc.ls(sl=1)
+    for ctrl in ctrls:
+        negate = ctrl + '_negate'
+        negate_grp = negate + '_grp'
+        top_grp = ctrl + '_grp'
+        mc.duplicate(ctrl, name=top_grp)
+        kids = mc.listRelatives(top_grp, allDescendents=True)
+        mc.delete(kids)
+        mc.parent(ctrl, top_grp)
+        mc.duplicate(ctrl, name=negate_grp)
+        kids = mc.listRelatives(negate_grp, allDescendents=True)
+        mc.delete(kids)
+        mc.parent(ctrl, negate_grp)        
+        mc.createNode('multiplyDivide', name=negate)
+        mc.connectAttr(ctrl+'.t', negate+'.input1')
+        mc.setAttr(negate+'.input2', -1, -1, -1, type='double3')
+        mc.connectAttr(negate+'.output', negate_grp+'.t')
+
+def ctrl_jnt_connect():
+    # function to direct connect ctrl to jnt translate/rotate/scale
+    ctrls = mc.ls(sl=1)
+    for ctrl in ctrls:
+        jnt = ctrl.replace('_ctrl', '_jnt')
+        for t in ['t', 'r', 's']:
+            mc.connectAttr(ctrl+'.{T}'.format(T=t), jnt+'.{T}'.format(T=t))
+        
 def follicle_constraint():
     #parse selection for ctrl (assumes ctrl has a parent grp for constraint), then geo
     # jnts need to be direct connected to ctrls to avoid cycle issues, which means zero-ed out with parents containing transforms
