@@ -215,10 +215,12 @@ def ctrl_grps():
         top_grp = ctrl + '_grp'
         negate = ctrl + '_negate'
         negate_grp = negate + '_grp'
-        mc.duplicate(ctrl, name=top_grp)
+        top = mc.duplicate(ctrl)
+        mc.rename(top, top_grp)
         kids = mc.listRelatives(top_grp, allDescendents=True)
         mc.delete(kids)
-        mc.duplicate(ctrl, name=negate_grp)
+        neg = mc.duplicate(ctrl)
+        mc.rename(neg, negate_grp)
         kids = mc.listRelatives(negate_grp, allDescendents=True)
         mc.delete(kids)
         mc.parent(ctrl, negate_grp)
