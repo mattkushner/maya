@@ -212,17 +212,17 @@ def ctrl_grps():
     # function to make negate and top groups for ctrls (prep for follicle setup below)
     ctrls = mc.ls(sl=1)
     for ctrl in ctrls:
+        top_grp = ctrl + '_grp'
         negate = ctrl + '_negate'
         negate_grp = negate + '_grp'
-        top_grp = ctrl + '_grp'
         mc.duplicate(ctrl, name=top_grp)
         kids = mc.listRelatives(top_grp, allDescendents=True)
         mc.delete(kids)
-        mc.parent(ctrl, top_grp)
         mc.duplicate(ctrl, name=negate_grp)
         kids = mc.listRelatives(negate_grp, allDescendents=True)
         mc.delete(kids)
-        mc.parent(ctrl, negate_grp)        
+        mc.parent(ctrl, negate_grp)
+        mc.parent(negate_grp, top_grp)        
         mc.createNode('multiplyDivide', name=negate)
         mc.connectAttr(ctrl+'.t', negate+'.input1')
         mc.setAttr(negate+'.input2', -1, -1, -1, type='double3')
