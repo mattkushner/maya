@@ -239,14 +239,15 @@ def ctrl_jnt_connect():
             mc.connectAttr(ctrl+'.{T}'.format(T=t), jnt+'.{T}'.format(T=t))
         
 def follicle_constraint():
-    #parse selection for ctrl (assumes ctrl has a parent grp for constraint), then geo
+    #parse selection for ctrl (assumes ctrl has a negate_grp & parent grp for constraint), then geo
     # jnts need to be direct connected to ctrls to avoid cycle issues, which means zero-ed out with parents containing transforms
     # negate_grp needs to exist btwn ctrl & grp: ctrl.t -> mult*-1 -> negate_grp.t
     selected = mc.ls(sl=True)
     if len(selected) == 2:
         ctrl, geo = selected
         mesh = mc.listRelatives(geo, children=True)[0]
-        ctrl_grp = mc.listRelatives(ctrl, parent=True)[0]
+        negate_grp = mc.listRelatives(ctrl, parent=True)[0]
+        ctrl_grp = mc.listRelatives(negate_grp, parent=True)[0]
         # create closestPointOnMesh to calculate where the follicle should go in u & v
         closest = mc.createNode('closestPointOnMesh')
         mc.connectAttr(geo+'.outMesh', closest+'.inMesh')
