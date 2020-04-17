@@ -283,11 +283,11 @@ def finger_group_setup(toe_name='l_f_index'):
         mc.connectAttr('{C}.{A}'.format(C=foot_ctrl, A=attr), '{T}_{A}_grp.rotate{X}'.format(T=toe_name, A=attr, X=axis), force=True)
 
         
-def transfer_skin_weights(a='c_head_jnt', b='c_head_jnt_bnd'):
-    # function to transfer jnt weight from jnt a to jnt b for selected verts
+def transfer_skin_weights(a='l_b_ankle_jnt_bnd', b='l_b_ankle_ik_jnt'):
+    # function to transfer skin weight from jnt a to jnt b for selected verts
     selected = mc.ls(sl=1)
-    mesh = mc.listRelatives(selected.split('.')[0], c=True)[0]
-    clst = [c for c in mc.listConnections(mesh) if mc.nodeType(c) == 'skinCluster']
+    mesh = mc.listRelatives(selected[0].split('.')[0], c=True)[0]
+    skin = [c for c in mc.listConnections(mesh) if mc.nodeType(c) == 'skinCluster'][0]
     verts = mc.filterExpand(selected, selectionMask=31)
     vert_dict = {}
     for i in range(len(verts)):
