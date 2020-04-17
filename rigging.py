@@ -282,6 +282,34 @@ def finger_group_setup(toe_name='l_f_index'):
             axis = 'Y'
         mc.connectAttr('{C}.{A}'.format(C=foot_ctrl, A=attr), '{T}_{A}_grp.rotate{X}'.format(T=toe_name, A=attr, X=axis), force=True)
 
+        
+def transfer_skin_weights(a='c_head_jnt', b='c_head_jnt_bnd'):
+    # function to transfer jnt weight from jnt a to jnt b for selected verts
+    selected = mc.ls(sl=1)
+    mesh = mc.listRelatives(selected.split('.')[0], c=True)[0]
+    clst = [c for c in mc.listConnections(mesh) if mc.nodeType(c) == 'skinCluster']
+    verts = mc.filterExpand(selected, selectionMask=31)
+    vert_dict = {}
+    for i in range(len(verts)):
+        keys = mc.skinPercent(skin, verts[i], query=True, transform=None)
+        values = mc.skinPercent(skin, verts[i], query=True, value= True)
+        inf_dict = {keys[i]: values[i] for i in range(len(keys))}
+        vert_dict[verts[i]] = inf_dict
+    for vert, inf_dict in vert_dict.iteritems():
+        most = ''
+        if a in inf_dict.keys():
+            mc.select(verts[i], replace=True)
+            try:
+                lock_dict = {a: mc.getAttr(a+'.liw'), b: mc.getAttr(b+'.liw')}
+                for j, lock in lock_dict.iteritems():
+                    mc.setAttr(j+'.liw', False)
+                mc.skinPercent(skin, transformMoveWeights=[a, b])
+                for j, lock in lock_dict.iteritems():
+                    mc.setAttr(j+'.liw', lock)
+            except:
+                print vert, a, b
+    mc.select(verts, replace=True)
+        
 def transfer_to_most(skin='body_lo_skinCluster', bad='c_head_jnt_bnd'):
     # function to transfer bad weights to most for that vert 
     selected = mc.ls(sl=1)
