@@ -256,7 +256,7 @@ def follicle_constraint():
         mc.setAttr(closest+'.inPositionY', trans[1])
         mc.setAttr(closest+'.inPositionZ', trans[2])
         # create follicle and rename based on ctrl
-        follicle_transform = ctrl+'_follicle'
+        follicle_transform = ctrl+'_fol'
         follicle_shape = follicle_transform+'Shape'
         follicle = mc.createNode('follicle')
         mc.rename(follicle, follicle_shape)
